@@ -12,7 +12,6 @@
 <meta name="apple-mobile-web-app-title" content="Music Player">
 <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
 
-<!-- Google Fonts: Inter for a Spotify-like feel -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -35,6 +34,8 @@
     --border-color: #333333; /* Darker grey for subtle borders */
     --shadow-color: rgba(0, 0, 0, 0.8); /* Stronger shadow for depth */
     --primary-color-rgb: 29, 185, 84; /* RGB for Spotify Green */
+    --error-color: #F44336; /* Red for errors */
+    --success-color: #4CAF50; /* Green for success */
   }
 
   body {
@@ -49,7 +50,35 @@
     min-height: 100vh;
     overflow-x: hidden; /* Prevent horizontal scrolling on mobile */
   }
-
+  
+  /* --- UI Message/Notification Bar --- */
+  .ui-message {
+    position: fixed;
+    top: -100px; /* Start off-screen */
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 25px;
+    border-radius: 25px;
+    color: white;
+    font-weight: 500;
+    z-index: 1000;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    transition: top 0.4s ease-in-out;
+    text-align: center;
+  }
+  .ui-message.show {
+    top: 20px;
+  }
+  .ui-message.error {
+    background-color: var(--error-color);
+  }
+  .ui-message.success {
+    background-color: var(--primary-color);
+  }
+  .ui-message.info {
+    background-color: #2196F3; /* Blue for info */
+  }
+  
   .container {
     background-color: var(--background-medium);
     border-radius: 12px; /* Softer rounded corners */
@@ -422,12 +451,22 @@
     flex-grow: 1;
     padding: 14px 18px; /* Increased padding */
     min-height: 48px;
-    border: 1px solid var(--border-color);
+    border: 2px solid var(--border-color); /* Thicker border for validation state */
     border-radius: 8px; /* Slightly rounded corners */
     background-color: #333333; /* Darker input background */
     color: var(--text-color);
     font-size: 0.95em;
     transition: border-color 0.2s ease;
+  }
+  
+  /* Input validation styles */
+  .stream-input-group input[type="text"].valid,
+  .youtube-playlist-input-group input[type="text"].valid {
+      border-color: var(--success-color);
+  }
+  .stream-input-group input[type="text"].invalid,
+  .youtube-playlist-input-group input[type="text"].invalid {
+      border-color: var(--error-color);
   }
 
   .stream-input-group input[type="text"]:focus,
@@ -609,10 +648,6 @@
         gap: 10px;
     }
 
-    .volume-controls input[type="range"] {
-        height: 8px;
-    }
-
     .volume-controls input[type="range"]::-webkit-slider-thumb,
     .volume-controls input[type="range"]::-moz-range-thumb {
         width: 18px;
@@ -626,6 +661,8 @@
 </style>
 </head>
 <body>
+  <div id="ui-message" class="ui-message"></div>
+
   <div class="container">
     <header>
       <h1>Advanced Music Player</h1>
@@ -660,7 +697,6 @@
             <button id="play-stream-btn">Play Stream</button>
         </div>
 
-        <!-- New section for YouTube Playlist Input -->
         <div class="youtube-playlist-input-group stream-input-group">
             <input type="text" id="youtube-playlist-url-input" placeholder="Enter YouTube Playlist URL" />
             <button id="add-youtube-playlist-btn">Add YouTube Playlist</button>
@@ -717,6 +753,14 @@
     'use strict'; // Enable strict mode for better error checking
 
     (function() {
+      // --- Security: YouTube Data API Key ---
+      // IMPORTANT: The API key has been removed from the source code for security.
+      // In a real-world application, you should NEVER expose your API key on the client-side.
+      // Instead, create a backend server (a "proxy") that securely stores the key
+      // and makes requests to the YouTube API on behalf of your app.
+      // For development, you can paste your key here, but do not commit it to version control.
+      const YOUTUBE_API_KEY = 'AIzaSyDBQ9OjY2XW8DY7-WpPb6Q2LURnWCzkoAY'; // <--- REPLACE THIS LINE WITH YOUR ACTUAL KEY
+
       // --- IndexedDB Setup ---
       const IDB_DATABASE_NAME = 'music-db';
       const IDB_STORE_NAME = 'tracks';
@@ -750,6 +794,26 @@
         });
       }
 
+      // --- UI Feedback ---
+      const uiMessageElement = document.getElementById('ui-message');
+      let messageTimeout;
+
+      /**
+       * Displays a message to the user in the UI.
+       * @param {string} message The text to display.
+       * @param {string} type The type of message ('success', 'error', 'info').
+       * @param {number} duration The duration in milliseconds to show the message.
+       */
+      function showUIMessage(message, type = 'info', duration = 3000) {
+        clearTimeout(messageTimeout); // Clear any existing message timeout
+        uiMessageElement.textContent = message;
+        uiMessageElement.className = `ui-message ${type} show`; // Add type and show classes
+        
+        messageTimeout = setTimeout(() => {
+          uiMessageElement.classList.remove('show');
+        }, duration);
+      }
+      
       // --- Audio Context and Visualizer ---
       let audioContext;
       let analyser;
@@ -825,8 +889,12 @@
         for (let i = 0; i < bufferLength; i++) {
           const barHeight = dataArray[i]; // Get bar height from frequency data (0-255)
 
-          // Draw a rectangle for each bar
-          visualizerCtx.fillStyle = `rgb(${barHeight + 100}, 50, 50)`; // Color based on height for a dynamic look
+          // Create a gradient for the bars
+          const gradient = visualizerCtx.createLinearGradient(0, visualizerCanvas.height, 0, visualizerCanvas.height - barHeight);
+          gradient.addColorStop(0, 'var(--primary-color)');
+          gradient.addColorStop(1, '#68d391'); // Lighter green
+
+          visualizerCtx.fillStyle = gradient;
           visualizerCtx.fillRect(x, visualizerCanvas.height - barHeight, barWidth, barHeight);
 
           x += barWidth + 1; // Move to the right for the next bar, with a small gap
@@ -840,11 +908,6 @@
       let audio = new Audio(); // HTML5 Audio element for local files and direct streams
       let isPlaying = false;
       let currentTrackType = 'local'; // 'local', 'stream', or 'youtube'
-
-      // --- YouTube Data API Key ---
-      // IMPORTANT: Replace 'YOUR_API_KEY' with your actual YouTube Data API key.
-      // For production, consider proxying requests through a backend to hide the key.
-      const YOUTUBE_API_KEY = 'AIzaSyDBQ9OjY2XW8DY7-WpPb6Q2LURnWCzkoAY';
 
       // --- DOM Elements ---
       const addMusicFileInput = document.getElementById('add-music-file-input');
@@ -910,7 +973,8 @@
               },
               events: {
                   'onReady': onPlayerReady,
-                  'onStateChange': onPlayerStateChange
+                  'onStateChange': onPlayerStateChange,
+                  'onError': onPlayerError
               }
           });
       };
@@ -920,11 +984,20 @@
        * @param {Object} event The YouTube player event object.
        */
       function onPlayerReady(event) {
-          console.log('YouTube player ready. Event:', event);
-          // Set initial volume for YouTube player to match the slider
+          console.log('YouTube player ready.');
           if (youtubePlayer) {
               youtubePlayer.setVolume(volumeSlider.value);
           }
+      }
+      
+      /**
+       * Callback for YouTube player errors.
+       * @param {object} event The error event.
+       */
+      function onPlayerError(event) {
+          console.error('YouTube Player Error:', event.data);
+          showUIMessage(`Youtubeer error: ${event.data}`, 'error');
+          playNextTrack(); // Try to play the next track
       }
 
       /**
@@ -933,14 +1006,12 @@
        * @param {Object} event The YouTube player event object.
        */
       function onPlayerStateChange(event) {
-          console.log('YouTube player state changed:', event.data);
           const state = event.data;
           switch (state) {
               case YT.PlayerState.PLAYING:
                   isPlaying = true;
                   updatePlayPauseButton();
-                  // Note: Visualizer for YouTube audio is complex. This setup
-                  // does not route YouTube audio through the custom AudioContext.
+                  updateMediaSession();
                   break;
               case YT.PlayerState.PAUSED:
                   isPlaying = false;
@@ -948,15 +1019,6 @@
                   break;
               case YT.PlayerState.ENDED:
                   playNextTrack(); // Auto-play next if YouTube track ends
-                  break;
-              case YT.PlayerState.BUFFERING:
-                  // Could show a buffering indicator here
-                  break;
-              case YT.PlayerState.CUED:
-                  // Video is cued but not playing
-                  break;
-              default:
-                  // Other states like unstarted
                   break;
           }
           updateProgressBarAndTimer(); // Update UI for YouTube playback
@@ -967,28 +1029,17 @@
        * @param {string} videoId The ID of the YouTube video.
        */
       function playYouTubeAudio(videoId) {
-          if (!youtubePlayer) {
-              console.error("YouTube player not initialized.");
-              // Display a user-friendly message instead of alert
-              // e.g., showMessage("YouTube player not ready. Please try again.");
+          if (!youtubePlayer || typeof youtubePlayer.loadVideoById !== 'function') {
+              showUIMessage("YouTube player is not ready yet.", 'error');
               return;
           }
-          // Pause current local/stream playback if any
-          if (!audio.paused) {
-              audio.pause();
-          }
+          if (!audio.paused) audio.pause();
+          
           currentTrackType = 'youtube';
-          // currentTrackIndex is already set by the calling function (playCurrentTrack or event listener)
-
           youtubePlayer.loadVideoById(videoId);
           isPlaying = true;
           updatePlayPauseButton();
-
-          // Update track info immediately, duration will update as video plays
-          const currentTrack = playlist[currentTrackIndex];
-          currentTrackTitle.textContent = currentTrack.title || "YouTube Video";
-          currentTrackArtist.textContent = currentTrack.artist ? `YouTube: ${currentTrack.artist}` : `YouTube: ${videoId}`;
-          durationSpan.textContent = '0:00'; // Will update as video plays
+          updateCurrentTrackInfo();
       }
 
       /**
@@ -1018,77 +1069,68 @@
        * @param {string} playlistId The ID of the YouTube playlist.
        */
       async function addYouTubePlaylist(playlistId) {
-          if (!YOUTUBE_API_KEY) {
-              // Replace alert with a custom message box
-              console.error("YouTube API Key is not configured. Please set YOUTUBE_API_KEY.");
+          if (!YOUTUBE_API_KEY || YOUTUBE_API_KEY === 'PASTE YOUR YOUTUBE API KEY HERE FOR DEVELOPMENT') {
+              showUIMessage("YouTube API Key is not configured. Please replace the placeholder.", 'error', 7000);
               return;
           }
 
-          let nextPageToken = null;
+          let nextPageToken = '';
           let playlistTitle = 'YouTube Playlist';
+          let videosAdded = 0;
+          showUIMessage('Fetching playlist...', 'info', 10000);
 
-          // Fetch playlist details (title)
           try {
-              const playlistDetailsUrl = `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${YOUTUBE_API_KEY}`;
-              const detailsResponse = await fetch(playlistDetailsUrl);
+              // Fetch playlist details (title)
+              const detailsUrl = `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${YOUTUBE_API_KEY}`;
+              const detailsResponse = await fetch(detailsUrl);
+              if (!detailsResponse.ok) throw new Error(`HTTP error! status: ${detailsResponse.status}`);
               const detailsData = await detailsResponse.json();
               if (detailsData.items && detailsData.items.length > 0) {
                   playlistTitle = detailsData.items[0].snippet.title;
               }
-          } catch (error) {
-              console.error("Error fetching YouTube playlist details:", error);
-              // Replace alert with a custom message box
-              console.error("Failed to fetch YouTube playlist details. Check the URL or API key.");
-              return;
-          }
 
-          // Fetch playlist items (videos)
-          do {
-              const playlistItemsUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${YOUTUBE_API_KEY}${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`;
-              try {
-                  const response = await fetch(playlistItemsUrl);
+              // Fetch playlist items (videos)
+              do {
+                  const itemsUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${YOUTUBE_API_KEY}${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`;
+                  const response = await fetch(itemsUrl);
+                  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                   const data = await response.json();
 
                   if (data.items) {
                       data.items.forEach(item => {
-                          const videoId = item.snippet.resourceId.videoId;
-                          const videoTitle = item.snippet.title;
-                          const channelTitle = item.snippet.channelTitle;
-
-                          if (videoId && videoTitle !== 'Private video' && videoTitle !== 'Deleted video') { // Ensure valid video ID and not private/deleted
+                          const { videoId } = item.snippet.resourceId;
+                          const { title, channelTitle } = item.snippet;
+                          if (videoId && title !== 'Private video' && title !== 'Deleted video') {
                               const youtubeTrack = {
-                                  id: videoId, // Use videoId as ID for YouTube tracks
-                                  name: `YouTube: ${videoTitle}`,
-                                  url: `https://www.youtube.com/watch?v=${videoId}`, // Store full URL
+                                  id: videoId,
+                                  url: `https://www.youtube.com/watch?v=${videoId}`, // Full YouTube video URL
                                   videoId: videoId,
                                   type: 'youtube',
-                                  title: videoTitle,
+                                  title: title,
                                   artist: channelTitle,
-                                  album: playlistTitle, // Use playlist title as album
+                                  album: playlistTitle,
                                   genre: 'Video'
                               };
-
-                              // Add to playlist if not already present (check by videoId for YouTube tracks)
-                              if (!playlist.some(t => t.type === 'youtube' && t.videoId === videoId)) {
+                              if (!playlist.some(t => t.id === videoId)) {
                                   playlist.push(youtubeTrack);
+                                  videosAdded++;
                               }
                           }
                       });
-                      nextPageToken = data.nextPageToken; // Get token for next page of results
+                      nextPageToken = data.nextPageToken;
                   } else {
-                      console.warn("No items found in playlist or API error:", data);
-                      nextPageToken = null; // Stop fetching if no more items or error
+                      nextPageToken = null;
                   }
-              } catch (error) {
-                  console.error("Error fetching YouTube playlist items:", error);
-                  // Replace alert with a custom message box
-                  console.error("Failed to fetch YouTube playlist items. Check the URL or API key.");
-                  nextPageToken = null;
-              }
-          } while (nextPageToken); // Continue as long as there's a next page
+              } while (nextPageToken);
 
-          renderPlaylist(); // Re-render the playlist after adding tracks
-          showTab('playlist-tab'); // Switch to playlist tab
+              renderPlaylist();
+              showUIMessage(`Added ${videosAdded} videos from "${playlistTitle}"`, 'success');
+              showTab('playlist-tab');
+
+          } catch (error) {
+              console.error("Error fetching YouTube playlist:", error);
+              showUIMessage('Failed to fetch playlist. Check URL or API key.', 'error', 5000);
+          }
       }
 
 
@@ -1099,56 +1141,53 @@
        */
       function playCurrentTrack() {
         if (playlist.length === 0 || currentTrackIndex === -1) {
-            pauseCurrentTrack(); // Ensure player stops if no track is selected
-            currentTrackTitle.textContent = 'No track playing';
-            currentTrackArtist.textContent = '';
-            progressBar.style.width = '0%';
-            currentTimeSpan.textContent = '0:00';
-            durationSpan.textContent = '0:00';
+            pauseCurrentTrack();
+            updateCurrentTrackInfo(); // Update UI to show "No track playing"
             return;
         }
 
         const track = playlist[currentTrackIndex];
 
         // Pause any currently playing audio/YouTube video before switching
-        if (!audio.paused) {
-            audio.pause();
-        }
-        if (youtubePlayer && typeof youtubePlayer.pauseVideo === 'function') {
+        if (!audio.paused) audio.pause();
+        if (youtubePlayer && typeof youtubePlayer.pauseVideo === 'function' && youtubePlayer.getPlayerState() === 1) {
             youtubePlayer.pauseVideo();
         }
 
-        currentTrackType = track.type; // Update the current track type
+        currentTrackType = track.type;
 
         if (track.type === 'youtube') {
             playYouTubeAudio(track.videoId);
-        } else if (track.type === 'local') {
-            audio.src = URL.createObjectURL(track.file);
-            audio.play().catch(e => console.error("Error playing local audio:", e));
-            // Connect local audio to visualizer if AudioContext is initialized
+        } else {
+            // This handles both 'local' and 'stream' types
+            audio.src = track.type === 'local' ? URL.createObjectURL(track.file) : track.url;
+            audio.play().catch(e => {
+                console.error("Error playing audio:", e);
+                showUIMessage(`Could not play track: ${track.title}`, 'error');
+            });
             if (audioContext) {
-                connectSourceToVisualizer(audioContext.createMediaElementSource(audio));
-            }
-        } else if (track.type === 'stream') {
-            audio.src = track.url;
-            audio.play().catch(e => console.error("Error playing stream audio:", e));
-            // Connect stream audio to visualizer if AudioContext is initialized
-            if (audioContext) {
-                connectSourceToVisualizer(audioContext.createMediaElementSource(audio));
+                // This requires a Cross-Origin header for streams, may not always work
+                try {
+                    if (!sourceNode || sourceNode.mediaElement !== audio) {
+                        connectSourceToVisualizer(audioContext.createMediaElementSource(audio));
+                    }
+                } catch (e) {
+                    console.warn("Could not connect audio to visualizer (CORS issue with stream?).", e);
+                }
             }
         }
 
         isPlaying = true;
         updatePlayPauseButton();
         updateCurrentTrackInfo();
-        renderPlaylist(); // Re-render playlist to highlight the playing track
+        renderPlaylist();
       }
 
       /**
        * Pauses the currently playing track (local, stream, or YouTube).
        */
       function pauseCurrentTrack() {
-        if (currentTrackType === 'youtube' && youtubePlayer) {
+        if (currentTrackType === 'youtube' && youtubePlayer && typeof youtubePlayer.pauseVideo === 'function') {
             youtubePlayer.pauseVideo();
         } else {
             audio.pause();
@@ -1161,35 +1200,31 @@
        * Toggles play/pause for the current track.
        */
       function togglePlayPause() {
+        if (currentTrackIndex === -1 && playlist.length > 0) {
+            currentTrackIndex = 0;
+        }
+        
         if (isPlaying) {
           pauseCurrentTrack();
         } else {
-          // If no track is playing and playlist is not empty, start from the first track
-          if (currentTrackIndex === -1 && playlist.length > 0) {
-            currentTrackIndex = 0;
-          }
           playCurrentTrack();
         }
       }
 
       /**
        * Plays the next track in the playlist.
-       * Cycles back to the beginning if at the end.
        */
       function playNextTrack() {
         if (playlist.length === 0) return;
-
         currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
         playCurrentTrack();
       }
 
       /**
        * Plays the previous track in the playlist.
-       * Cycles to the end if at the beginning.
        */
       function playPrevTrack() {
         if (playlist.length === 0) return;
-
         currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
         playCurrentTrack();
       }
@@ -1205,22 +1240,24 @@
        * Updates the displayed title and artist of the current track.
        */
       function updateCurrentTrackInfo() {
-        if (playlist[currentTrackIndex]) {
+        if (currentTrackIndex > -1 && playlist[currentTrackIndex]) {
           const track = playlist[currentTrackIndex];
-          currentTrackTitle.textContent = track.title || track.name || 'Unknown Title';
-          currentTrackArtist.textContent = track.artist ? `${track.artist} - ${track.album || 'Unknown Album'}` : 'Unknown Artist - Unknown Album';
+          currentTrackTitle.textContent = track.title || 'Unknown Title';
+          currentTrackArtist.textContent = track.artist ? `${track.artist} - ${track.album || 'Unknown Album'}` : 'Unknown Artist';
         } else {
           currentTrackTitle.textContent = 'No track playing';
-          currentTrackArtist.textContent = '';
+          currentTrackArtist.textContent = 'Artist - Album';
+          progressBar.style.width = '0%';
+          currentTimeSpan.textContent = '0:00';
+          durationSpan.textContent = '0:00';
         }
       }
 
       /**
        * Formats time in seconds into a "MM:SS" string.
-       * @param {number} seconds The time in seconds.
-       * @returns {string} Formatted time string.
        */
       function formatTime(seconds) {
+        if (isNaN(seconds) || seconds < 0) return '0:00';
         const minutes = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
@@ -1228,13 +1265,11 @@
 
       /**
        * Updates the progress bar and current/total time display.
-       * Handles both HTML Audio and YouTube player time.
        */
       function updateProgressBarAndTimer() {
-        let current = 0;
-        let total = 0;
+        let current = 0, total = 0;
 
-        if (currentTrackType === 'youtube' && youtubePlayer && youtubePlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+        if (currentTrackType === 'youtube' && youtubePlayer && typeof youtubePlayer.getDuration === 'function') {
             current = youtubePlayer.getCurrentTime();
             total = youtubePlayer.getDuration();
         } else if (audio && !isNaN(audio.duration)) {
@@ -1244,21 +1279,47 @@
 
         currentTimeSpan.textContent = formatTime(current);
         durationSpan.textContent = formatTime(total);
-
-        if (total > 0) {
-          const progress = (current / total) * 100;
-          progressBar.style.width = `${progress}%`;
-        } else {
-          progressBar.style.width = '0%';
+        progressBar.style.width = total > 0 ? `${(current / total) * 100}%` : '0%';
+      }
+      
+      // --- Media Session API Integration ---
+      /**
+       * Updates the Media Session metadata for native OS media controls.
+       */
+      function updateMediaSession() {
+        if ('mediaSession' in navigator && currentTrackIndex > -1) {
+            const track = playlist[currentTrackIndex];
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: track.title || 'Unknown Title',
+                artist: track.artist || 'Unknown Artist',
+                album: track.album || 'Unknown Album',
+                artwork: [
+                    // You could fetch album art here if available
+                    { src: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+                    { src: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+                ]
+            });
         }
+      }
+
+      /**
+       * Sets up the action handlers for the Media Session API.
+       */
+      function setupMediaSessionHandlers() {
+          if ('mediaSession' in navigator) {
+              navigator.mediaSession.setActionHandler('play', togglePlayPause);
+              navigator.mediaSession.setActionHandler('pause', togglePlayPause);
+              navigator.mediaSession.setActionHandler('previoustrack', playPrevTrack);
+              navigator.mediaSession.setActionHandler('nexttrack', playNextTrack);
+          }
       }
 
       // --- Track Adding and Rendering ---
       /**
        * Adds local audio files selected by the user to the library and IndexedDB.
-       * @param {FileList} files The FileList object from an input element.
        */
       async function addLocalFiles(files) {
+        let filesAdded = 0;
         for (const file of files) {
           if (file.type.startsWith('audio/')) {
             const track = {
@@ -1272,23 +1333,24 @@
               genre: 'Unknown Genre'
             };
             await saveTrackToIndexedDB(track);
+            filesAdded++;
           }
         }
-        await loadTracksFromIndexedDB(); // Reload library from DB to reflect new additions
-        renderLibraryList('all'); // Re-render library list after adding files
+        if (filesAdded > 0) {
+            await loadTracksFromIndexedDB();
+            renderLibraryList('all');
+            showUIMessage(`Added ${filesAdded} local file(s)`, 'success');
+        }
       }
 
       /**
        * Saves a track object to IndexedDB.
-       * @param {Object} track The track object to save.
-       * @returns {Promise<void>} A promise that resolves when the track is saved.
        */
       async function saveTrackToIndexedDB(track) {
         return new Promise((resolve, reject) => {
           const transaction = db.transaction(IDB_STORE_NAME, 'readwrite');
           const store = transaction.objectStore(IDB_STORE_NAME);
           const request = store.add(track);
-
           request.onsuccess = () => resolve();
           request.onerror = (event) => reject(event.target.error);
         });
@@ -1296,47 +1358,22 @@
 
       /**
        * Loads all tracks from IndexedDB into the global library array.
-       * @returns {Promise<void>} A promise that resolves when tracks are loaded.
        */
       async function loadTracksFromIndexedDB() {
         return new Promise((resolve, reject) => {
           const transaction = db.transaction(IDB_STORE_NAME, 'readonly');
           const store = transaction.objectStore(IDB_STORE_NAME);
           const request = store.getAll();
-
           request.onsuccess = (event) => {
-            library = event.target.result;
-            // Filter out non-local tracks if necessary when loading library from DB
-            // (e.g., if you had saved stream/YouTube tracks to library, which is not currently done)
-            library = library.filter(t => t.type === 'local');
+            library = event.target.result.filter(t => t.type === 'local');
             resolve();
           };
-
-          request.onerror = (event) => reject(event.target.error);
-        });
-      }
-
-      /**
-       * Deletes a track from IndexedDB by its ID.
-       * (Currently not used in UI, but useful for future features)
-       * @param {number} id The ID of the track to delete.
-       * @returns {Promise<void>} A promise that resolves when the track is deleted.
-       */
-      async function deleteTrackFromIndexedDB(id) {
-        return new Promise((resolve, reject) => {
-          const transaction = db.transaction(IDB_STORE_NAME, 'readwrite');
-          const store = transaction.objectStore(IDB_STORE_NAME);
-          const request = store.delete(id);
-
-          request.onsuccess = () => resolve();
           request.onerror = (event) => reject(event.target.error);
         });
       }
 
       /**
        * Renders the music library list based on the specified filter type and value.
-       * @param {string} filterType The type of filter ('all', 'albums', 'artists', 'genres').
-       * @param {string} [filterValue=''] The value to filter by (e.g., album name, artist name).
        */
       function renderLibraryList(filterType = 'all', filterValue = '') {
         libraryList.innerHTML = ''; // Clear previous list
@@ -1394,15 +1431,11 @@
             }
         }
 
-        if (filteredLibrary.length === 0) {
-          noLibraryMessage.style.display = 'block';
-          return;
-        }
-        noLibraryMessage.style.display = 'none';
+        noLibraryMessage.style.display = filteredLibrary.length === 0 ? 'block' : 'none';
 
-        filteredLibrary.forEach((track) => { // No need for index here, use track.id for uniqueness
+        filteredLibrary.forEach((track) => {
           const li = document.createElement('li');
-          li.dataset.trackId = track.id; // Store actual track ID for playing/deletion
+          li.dataset.trackId = track.id;
 
           li.innerHTML = `
             <div class="track-info">
@@ -1415,16 +1448,17 @@
           `;
           libraryList.appendChild(li);
 
-          // Add to playlist button listener
           li.querySelector('.add-to-playlist-btn').addEventListener('click', (event) => {
-            event.stopPropagation(); // Prevent li click from triggering other actions
+            event.stopPropagation();
             const trackIdToAdd = parseFloat(event.target.dataset.trackId);
             const trackToAdd = library.find(t => t.id === trackIdToAdd);
-            // Prevent duplicates in playlist (check by ID)
             if (trackToAdd && !playlist.some(p => p.id === trackToAdd.id)) {
                 playlist.push(trackToAdd);
                 renderPlaylist();
-                showTab('playlist-tab'); // Switch to playlist tab after adding
+                showUIMessage(`Added "${trackToAdd.title}" to playlist`, 'success');
+                showTab('playlist-tab');
+            } else {
+                showUIMessage(`"${trackToAdd.title}" is already in the playlist`, 'info');
             }
           });
         });
@@ -1432,34 +1466,23 @@
 
       /**
        * Renders the current playlist in the playlist tab.
-       * Highlights the currently playing track.
        */
       function renderPlaylist() {
-        playlistList.innerHTML = ''; // Clear previous list
-        if (playlist.length === 0) {
-          noPlaylistMessage.style.display = 'block';
-          return;
-        }
-        noPlaylistMessage.style.display = 'none';
+        playlistList.innerHTML = '';
+        noPlaylistMessage.style.display = playlist.length === 0 ? 'block' : 'none';
 
         playlist.forEach((track, index) => {
           const li = document.createElement('li');
-          li.dataset.index = index; // Store index for playing
-          // Highlight the currently playing track
+          li.dataset.index = index;
           li.classList.toggle('playing', index === currentTrackIndex);
 
-          let trackDisplayTitle = track.title || track.name;
-          let trackDisplayArtistAlbum = track.artist ? `${track.artist} - ${track.album || 'Unknown Album'}` : 'Unknown Artist - Unknown Album';
-
-          if (track.type === 'youtube') {
-              trackDisplayTitle = `YouTube: ${track.title}`;
-              trackDisplayArtistAlbum = `Artist: ${track.artist || 'YouTube'}`;
-          }
+          const displayTitle = track.type === 'youtube' ? `YouTube: ${track.title}` : (track.title || track.name);
+          const displayArtist = track.artist ? `${track.artist} - ${track.album || 'Unknown Album'}` : 'Unknown Artist';
 
           li.innerHTML = `
             <div class="track-info">
-              <strong>${trackDisplayTitle}</strong>
-              <span>${trackDisplayArtistAlbum}</span>
+              <strong>${displayTitle}</strong>
+              <span>${displayArtist}</span>
             </div>
             <div class="playlist-actions">
               <button class="remove-from-playlist-btn" data-index="${index}" title="Remove from Playlist">🗑️</button>
@@ -1467,52 +1490,37 @@
           `;
           playlistList.appendChild(li);
 
-          // Add click listener to play the track
           li.addEventListener('click', () => {
             currentTrackIndex = index;
             playCurrentTrack();
-            // renderPlaylist() is called inside playCurrentTrack to update highlight
           });
 
-          // Add click listener to remove track from playlist
           li.querySelector('.remove-from-playlist-btn').addEventListener('click', (event) => {
-            event.stopPropagation(); // Prevent li click from playing the track
+            event.stopPropagation();
             const indexToRemove = parseInt(event.target.dataset.index);
-
-            // If the removed track is the current one, stop playback
+            
             if (indexToRemove === currentTrackIndex) {
               pauseCurrentTrack();
-              currentTrackIndex = -1; // Reset current track index
-              currentTrackTitle.textContent = "No track playing";
-              currentTrackArtist.textContent = "";
-              progressBar.style.width = '0%';
-              currentTimeSpan.textContent = '0:00';
-              durationSpan.textContent = '0:00';
-              if (currentTrackType === 'youtube' && youtubePlayer) {
-                  youtubePlayer.stopVideo(); // Stop YouTube if it was playing
-              }
-              currentTrackType = 'local'; // Reset type to a default
+              if (currentTrackType === 'youtube' && youtubePlayer) youtubePlayer.stopVideo();
+              currentTrackIndex = -1;
+              updateCurrentTrackInfo();
             } else if (indexToRemove < currentTrackIndex) {
-              // If a track before the current one is removed, adjust currentTrackIndex
               currentTrackIndex--;
             }
-            playlist.splice(indexToRemove, 1); // Remove track from array
-            renderPlaylist(); // Re-render playlist
+            playlist.splice(indexToRemove, 1);
+            renderPlaylist();
           });
         });
       }
 
       /**
        * Shows the specified tab content and updates tab button active state.
-       * @param {string} tabId The ID of the tab content div (e.g., 'playlist-tab').
        */
       function showTab(tabId) {
-        const tabs = document.querySelectorAll('.tab-content');
-        tabs.forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
 
-        const tabButtons = document.querySelectorAll('.tab-button');
-        tabButtons.forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
         document.getElementById(`${tabId}-btn`).classList.add('active');
       }
 
@@ -1520,7 +1528,27 @@
        * Clears any active library filter and displays all songs.
        */
       function clearFilter() {
-        renderLibraryList('all'); // Go back to showing all songs
+        renderLibraryList('all');
+      }
+      
+      /**
+       * Validates URL input fields in real-time.
+       * @param {HTMLInputElement} inputElement The input element to validate.
+       * @param {RegExp} regex The regular expression to test against.
+       */
+      function validateUrlInput(inputElement, regex) {
+          const url = inputElement.value.trim();
+          if (url === '') {
+              inputElement.classList.remove('valid', 'invalid');
+              return;
+          }
+          if (regex.test(url)) {
+              inputElement.classList.add('valid');
+              inputElement.classList.remove('invalid');
+          } else {
+              inputElement.classList.add('invalid');
+              inputElement.classList.remove('valid');
+          }
       }
 
       // --- Event Listeners ---
@@ -1528,121 +1556,104 @@
        * Initializes all event listeners for player controls, inputs, and tabs.
        */
       function initEventListeners() {
-        // Local music file input
-        addMusicFileInput.addEventListener('change', (event) => {
-          addLocalFiles(event.target.files);
-        });
+        addMusicFileInput.addEventListener('change', (event) => addLocalFiles(event.target.files));
 
-        // Play stream button
         playStreamBtn.addEventListener('click', () => {
           const url = streamUrlInput.value.trim();
           if (url) {
             const streamTrack = {
-              id: Date.now() + Math.random(), // Unique ID for stream
+              id: Date.now() + Math.random(),
               name: url.split('/').pop() || 'Streaming Audio',
-              url: url,
-              type: 'stream',
-              title: url.split('/').pop() || 'Streaming Audio',
-              artist: 'Remote Stream',
-              album: 'Live Stream',
-              genre: 'Stream'
+              url: url, type: 'stream', title: 'Streaming Audio', artist: 'Remote Stream', album: 'Live Stream'
             };
-            // Add stream to playlist and play it
             playlist.push(streamTrack);
-            currentTrackIndex = playlist.length - 1; // Play the newly added stream
+            currentTrackIndex = playlist.length - 1;
             playCurrentTrack();
-            streamUrlInput.value = ''; // Clear input
+            streamUrlInput.value = '';
+            streamUrlInput.classList.remove('valid', 'invalid');
           } else {
-            // Replace alert with a custom message box
-            console.warn('Please enter a stream URL.');
+            showUIMessage('Please enter a valid stream URL.', 'error');
           }
         });
 
-        // Play YouTube video button
         playYoutubeBtn.addEventListener('click', () => {
             const youtubeUrl = youtubeUrlInput.value.trim();
             const videoId = extractYouTubeVideoId(youtubeUrl);
             if (videoId) {
                 const youtubeTrack = {
-                    id: videoId, // Use videoId as ID for YouTube tracks
-                    name: `YouTube: ${videoId}`,
-                    url: youtubeUrl,
-                    videoId: videoId,
-                    type: 'youtube',
-                    title: 'YouTube Video', // Will be updated by API if fetching title
-                    artist: 'YouTube',
-                    album: 'YouTube',
-                    genre: 'Video'
+                    id: videoId, url: youtubeUrl, videoId: videoId, type: 'youtube',
+                    title: 'YouTube Video', artist: 'YouTube', album: 'YouTube'
                 };
-                // Check if this YouTube video is already in the playlist
-                const existingIndex = playlist.findIndex(t => t.type === 'youtube' && t.videoId === videoId);
+                const existingIndex = playlist.findIndex(t => t.id === videoId);
                 if (existingIndex === -1) {
                     playlist.push(youtubeTrack);
-                    currentTrackIndex = playlist.length - 1; // Play the newly added YouTube track
+                    currentTrackIndex = playlist.length - 1;
                 } else {
-                    currentTrackIndex = existingIndex; // Play existing YouTube track
+                    currentTrackIndex = existingIndex;
                 }
-
-                playCurrentTrack(); // This will call playYouTubeAudio
-                youtubeUrlInput.value = ''; // Clear input
+                playCurrentTrack();
+                youtubeUrlInput.value = '';
+                youtubeUrlInput.classList.remove('valid', 'invalid');
             } else {
-                // Replace alert with a custom message box
-                console.warn('Please enter a valid YouTube video URL.');
+                showUIMessage('Please enter a valid YouTube video URL.', 'error');
             }
         });
 
-        // Add YouTube Playlist button
         addYoutubePlaylistBtn.addEventListener('click', () => {
             const playlistUrl = youtubePlaylistUrlInput.value.trim();
             const playlistId = extractYouTubePlaylistId(playlistUrl);
             if (playlistId) {
-                addYouTubePlaylist(playlistId); // Call the async function to fetch and add playlist
-                youtubePlaylistUrlInput.value = ''; // Clear input
+                addYouTubePlaylist(playlistId);
+                youtubePlaylistUrlInput.value = '';
+                youtubePlaylistUrlInput.classList.remove('valid', 'invalid');
             } else {
-                // Replace alert with a custom message box
-                console.warn('Please enter a valid YouTube playlist URL.');
+                showUIMessage('Please enter a valid YouTube playlist URL.', 'error');
             }
         });
+        
+        // Real-time URL validation
+        const youtubeVideoRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]{11}/;
+        const youtubePlaylistRegex = /^(https?:\/\/)?(www\.)?youtube\.com\/playlist\?list=[a-zA-Z0-9_-]+/;
+        const streamRegex = /^(https?:\/\/).*\.(mp3|aac|ogg|m4a)(\?.*)?$/i;
 
+        youtubeUrlInput.addEventListener('input', () => validateUrlInput(youtubeUrlInput, youtubeVideoRegex));
+        youtubePlaylistUrlInput.addEventListener('input', () => validateUrlInput(youtubePlaylistUrlInput, youtubePlaylistRegex));
+        streamUrlInput.addEventListener('input', () => validateUrlInput(streamUrlInput, streamRegex));
 
-        // Player control buttons
+        // Player controls
         playPauseBtn.addEventListener('click', togglePlayPause);
         prevBtn.addEventListener('click', playPrevTrack);
         nextBtn.addEventListener('click', playNextTrack);
 
         // Audio element events
         audio.addEventListener('timeupdate', updateProgressBarAndTimer);
-        audio.addEventListener('ended', playNextTrack); // Auto-play next track when current ends
+        audio.addEventListener('ended', playNextTrack);
+        audio.addEventListener('play', () => { isPlaying = true; updatePlayPauseButton(); updateMediaSession(); });
+        audio.addEventListener('pause', () => { isPlaying = false; updatePlayPauseButton(); });
+        audio.addEventListener('error', () => showUIMessage('Error playing audio file.', 'error'));
 
-        // Volume slider control
         volumeSlider.addEventListener('input', (event) => {
           const volume = event.target.value / 100;
-          audio.volume = volume; // Control HTML Audio volume
+          audio.volume = volume;
           if (youtubePlayer && typeof youtubePlayer.setVolume === 'function') {
-              youtubePlayer.setVolume(event.target.value); // Control YouTube player volume
+              youtubePlayer.setVolume(event.target.value);
           }
         });
 
-        // Progress bar click to seek
         progressBarContainer.addEventListener('click', (event) => {
           const clickX = event.clientX - progressBarContainer.getBoundingClientRect().left;
           const percentage = clickX / progressBarContainer.offsetWidth;
-          let newTime;
-
+          
           if (currentTrackType === 'youtube' && youtubePlayer && youtubePlayer.getDuration() > 0) {
-              newTime = youtubePlayer.getDuration() * percentage;
-              youtubePlayer.seekTo(newTime, true); // Seek YouTube video
+              youtubePlayer.seekTo(youtubePlayer.getDuration() * percentage, true);
           } else if (audio && !isNaN(audio.duration) && audio.duration > 0) {
-              newTime = audio.duration * percentage;
-              audio.currentTime = newTime; // Seek HTML Audio
+              audio.currentTime = audio.duration * percentage;
           }
         });
 
-        // Tab button event listeners
+        // Tabs and filters
         libraryTabBtn.addEventListener('click', () => showTab('library-tab'));
         playlistTabBtn.addEventListener('click', () => showTab('playlist-tab'));
-
-        // Library Filter Nav buttons
         viewAllSongsBtn.addEventListener('click', () => renderLibraryList('all'));
         viewAlbumsBtn.addEventListener('click', () => renderLibraryList('albums'));
         viewArtistsBtn.addEventListener('click', () => renderLibraryList('artists'));
@@ -1652,39 +1663,36 @@
 
       // --- Initialization ---
       /**
-       * Initializes the application: opens IndexedDB, loads tracks, sets up event listeners,
-       * and renders initial UI.
+       * Initializes the application.
        */
       async function init() {
-        await openIndexedDB(); // Ensure IndexedDB is ready
-        await loadTracksFromIndexedDB(); // Load existing tracks from IndexedDB
+        await openIndexedDB();
+        await loadTracksFromIndexedDB();
+        
+        initEventListeners();
+        setupMediaSessionHandlers();
+        
+        // Handle URL hash for PWA shortcuts
+        const tab = window.location.hash.substring(1);
+        if (tab === 'library') {
+            showTab('library-tab');
+        } else {
+            showTab('playlist-tab');
+        }
 
-        initEventListeners(); // Set up all UI event handlers
-
-        // Set initial active tab
-        showTab('playlist-tab'); // Default to showing the playlist tab
-
-        renderPlaylist(); // Render playlist based on loaded data
-        renderLibraryList('all'); // Render library list with 'all' songs view initially
-
-        // Ensure visualizer is set up
+        renderPlaylist();
+        renderLibraryList('all');
         setupVisualizer();
-        // The connectSourceToVisualizer is called in playCurrentTrack when audio starts.
       }
 
-      // Initialize the application when the DOM is fully loaded
       init();
 
-      // Service Worker Registration for PWA features
+      // Service Worker Registration
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/service-worker.js')
-            .then((registration) => {
-              console.log('Service Worker registered with scope:', registration.scope);
-            })
-            .catch((error) => {
-              console.error('Service Worker registration failed:', error);
-            });
+            .then((reg) => console.log('Service Worker registered.', reg))
+            .catch((err) => console.error('Service Worker registration failed:', err));
         });
       }
     })();
