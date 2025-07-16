@@ -2,7 +2,7 @@
   "name": "Advanced Music Player",
   "short_name": "Music Player",
   "description": "An advanced music player that works offline and supports local files, streams, and YouTube.",
-  "start_url": "/index.html",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#121212",
   "theme_color": "#1DB954",
@@ -65,14 +65,14 @@
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
-      "name": "Open Library",
+      "name": "View Library",
       "short_name": "Library",
       "description": "Browse your music library",
       "url": "/index.html#library",
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ],
-  "screenshots" : [
+  "screenshots": [
     {
       "src": "https://placehold.co/1080x1920/121212/1DB954?text=Your%20Playlist",
       "type": "image/png",

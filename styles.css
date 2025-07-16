@@ -1,0 +1,640 @@
+/* Reset */
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  /* Spotify-inspired colors */
+  --primary-color: #1DB954; /* Spotify Green */
+  --background-dark: #121212; /* Very dark grey/black */
+  --background-medium: #181818; /* Slightly lighter dark grey */
+  --background-light: #282828; /* Even lighter dark grey, almost charcoal */
+  --text-color: #FFFFFF; /* White */
+  --text-muted: #B3B3B3; /* Light grey */
+  --border-color: #333333; /* Darker grey for subtle borders */
+  --shadow-color: rgba(0, 0, 0, 0.8); /* Stronger shadow for depth */
+  --primary-color-rgb: 29, 185, 84; /* RGB for Spotify Green */
+  --error-color: #F44336; /* Red for errors */
+  --success-color: #4CAF50; /* Green for success */
+}
+
+body {
+  font-family: 'Inter', sans-serif; /* Use Inter font */
+  background-color: var(--background-dark);
+  color: var(--text-color);
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Align to top to allow more space for content */
+  min-height: 100vh;
+  overflow-x: hidden; /* Prevent horizontal scrolling on mobile */
+}
+
+/* --- UI Message/Notification Bar --- */
+.ui-message {
+  position: fixed;
+  top: -100px; /* Start off-screen */
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 25px;
+  border-radius: 25px;
+  color: white;
+  font-weight: 500;
+  z-index: 1000;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  transition: top 0.4s ease-in-out;
+  text-align: center;
+}
+.ui-message.show {
+  top: 20px;
+}
+.ui-message.error {
+  background-color: var(--error-color);
+}
+.ui-message.success {
+  background-color: var(--primary-color);
+}
+.ui-message.info {
+  background-color: #2196F3; /* Blue for info */
+}
+
+.container {
+  background-color: var(--background-medium);
+  border-radius: 12px; /* Softer rounded corners */
+  box-shadow: 0 8px 30px var(--shadow-color);
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* For rounded corners */
+}
+
+header {
+  background-color: var(--background-light);
+  padding: 20px 25px; /* More padding */
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.8em; /* Slightly larger title */
+  color: var(--primary-color);
+  font-weight: 700; /* Bolder */
+}
+
+nav.tabs {
+  display: flex;
+  justify-content: space-around;
+  background-color: var(--background-dark);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tab-button {
+  flex-grow: 1;
+  padding: 18px 0; /* More padding */
+  text-align: center;
+  color: var(--text-muted);
+  font-weight: 600; /* Semi-bold */
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  position: relative; /* For active indicator */
+}
+
+.tab-button:hover:not(.active) {
+  background-color: #222222; /* Subtle hover effect */
+  color: var(--text-color);
+}
+
+.tab-button.active {
+  color: var(--text-color);
+  background-color: var(--background-medium);
+  /* Spotify-like active indicator */
+  border-bottom: 3px solid var(--primary-color);
+}
+
+main {
+  flex-grow: 1;
+  padding: 25px; /* More padding */
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Library Tab Specifics */
+.library-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px; /* More margin */
+  gap: 15px; /* More gap */
+  flex-wrap: wrap;
+}
+
+.library-controls button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 14px 20px; /* Increased padding for better touch target and look */
+  min-height: 48px;
+  border-radius: 25px; /* Pill-shaped buttons */
+  cursor: pointer;
+  font-size: 0.95em;
+  font-weight: 600;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); /* Subtle shadow */
+}
+
+.library-controls button:hover {
+  background-color: #1ED760; /* Slightly lighter green on hover */
+  transform: translateY(-1px); /* Subtle lift effect */
+}
+
+.library-controls .file-input-wrapper {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex; /* Use flex for vertical alignment of text */
+  align-items: center;
+  justify-content: center;
+  background-color: var(--background-light);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  padding: 14px 20px;
+  min-height: 48px;
+  border-radius: 25px; /* Pill-shaped */
+  cursor: pointer;
+  font-size: 0.95em;
+  font-weight: 500;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.library-controls .file-input-wrapper:hover {
+  background-color: #383838;
+  border-color: #555555;
+}
+
+.library-controls .file-input-wrapper input[type="file"] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.library-filter-nav {
+  display: flex;
+  gap: 10px; /* More gap */
+  flex-wrap: wrap;
+  margin-bottom: 25px;
+}
+
+.library-filter-nav button {
+  background-color: var(--background-medium);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  padding: 10px 18px;
+  min-height: 40px;
+  border-radius: 20px; /* Rounded filter buttons */
+  cursor: pointer;
+  font-size: 0.88em;
+  font-weight: 500;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.library-filter-nav button:hover {
+  background-color: var(--background-light);
+  border-color: var(--text-muted);
+  color: var(--text-color);
+}
+
+.library-list, .playlist-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 400px; /* Default max height for scroll */
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--background-dark);
+}
+
+.library-list li, .playlist-list li {
+  padding: 15px 20px; /* More padding */
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.library-list li:last-child, .playlist-list li:last-child {
+  border-bottom: none;
+}
+
+.library-list li:hover, .playlist-list li:hover {
+  background-color: #222222; /* Darker hover effect */
+}
+
+.library-list li.playing, .playlist-list li.playing { /* Apply playing style to both lists */
+  background-color: rgba(var(--primary-color-rgb), 0.15); /* Subtle green highlight */
+  border-left: 4px solid var(--primary-color); /* Thicker border */
+  padding-left: 16px; /* Adjust padding due to border */
+}
+
+.track-info {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* Small gap between title and artist */
+}
+
+.track-info strong {
+  font-size: 1.05em; /* Slightly larger title */
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.track-info span {
+  font-size: 0.88em; /* Slightly smaller for artist/album */
+  color: var(--text-muted);
+}
+
+.playlist-actions button {
+  background: none;
+  border: none;
+  color: var(--text-muted); /* Muted color for icons */
+  font-size: 1.5em; /* Slightly larger icons for touch */
+  cursor: pointer;
+  margin-left: 15px; /* More margin */
+  transition: color 0.2s ease, transform 0.1s ease;
+  padding: 8px; /* Add padding for touch area */
+}
+
+.playlist-actions button:hover {
+  color: var(--primary-color); /* Green on hover */
+  transform: scale(1.1);
+}
+
+.no-songs-message {
+  text-align: center;
+  padding: 30px; /* More padding */
+  color: var(--text-muted);
+  font-size: 1.1em;
+}
+
+/* Player Controls */
+.player-controls-container {
+  background-color: var(--background-light);
+  padding: 25px; /* More padding */
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* More gap */
+}
+
+.current-track-info {
+  text-align: center;
+}
+
+.current-track-info h3 {
+  margin: 0 0 8px 0; /* More margin */
+  color: var(--text-color);
+  font-size: 1.3em; /* Larger title */
+  font-weight: 600;
+}
+
+.current-track-info p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95em;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 8px; /* Slightly thicker for easier tapping */
+  background-color: #404040; /* Darker background for progress bar */
+  border-radius: 4px;
+  cursor: pointer;
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background-color: var(--primary-color); /* Spotify Green progress */
+  border-radius: 4px;
+  transition: width 0.1s linear;
+}
+
+.time-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9em;
+  color: var(--text-muted);
+  margin-top: -5px;
+  margin-bottom: 10px;
+}
+
+.player-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 30px; /* More gap between buttons */
+  margin-bottom: 15px;
+}
+
+.player-buttons button {
+  background: none;
+  border: none;
+  color: var(--text-color); /* White icons */
+  font-size: 2.5em; /* Larger player control icons */
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.1s ease;
+  padding: 10px; /* Add padding for touch area */
+}
+
+.player-buttons button:hover {
+  color: var(--primary-color); /* Green on hover */
+  transform: scale(1.1);
+}
+
+.volume-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px; /* More gap */
+  justify-content: center;
+}
+
+.volume-controls input[type="range"] {
+  flex-grow: 1;
+  max-width: 250px; /* Slightly wider slider */
+  -webkit-appearance: none;
+  background: #404040; /* Darker background for slider track */
+  border-radius: 5px;
+  height: 10px;
+  outline: none;
+}
+
+.volume-controls input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px; /* Larger thumb for touch */
+  height: 22px; /* Larger thumb for touch */
+  background: var(--primary-color); /* Spotify Green thumb */
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.volume-controls input[type="range"]::-webkit-slider-thumb:hover {
+    background-color: #1ED760;
+    transform: scale(1.1);
+}
+
+.volume-controls input[type="range"]::-moz-range-thumb {
+  width: 22px; /* Larger thumb for touch */
+  height: 22px; /* Larger thumb for touch */
+  background: var(--primary-color); /* Spotify Green thumb */
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.volume-controls input[type="range"]::-moz-range-thumb:hover {
+    background-color: #1ED760;
+    transform: scale(1.1);
+}
+
+/* Stream URL input */
+.stream-input-group, .youtube-playlist-input-group {
+  display: flex;
+  gap: 15px; /* More gap */
+  margin-top: 20px; /* More margin */
+  flex-wrap: wrap;
+}
+
+.stream-input-group input[type="text"],
+.youtube-playlist-input-group input[type="text"] {
+  flex-grow: 1;
+  padding: 14px 18px; /* Increased padding */
+  min-height: 48px;
+  border: 2px solid var(--border-color); /* Thicker border for validation state */
+  border-radius: 8px; /* Slightly rounded corners */
+  background-color: #333333; /* Darker input background */
+  color: var(--text-color);
+  font-size: 0.95em;
+  transition: border-color 0.2s ease;
+}
+
+/* Input validation styles */
+.stream-input-group input[type="text"].valid,
+.youtube-playlist-input-group input[type="text"].valid {
+    border-color: var(--success-color);
+}
+.stream-input-group input[type="text"].invalid,
+.youtube-playlist-input-group input[type="text"].invalid {
+    border-color: var(--error-color);
+}
+
+.stream-input-group input[type="text"]:focus,
+.youtube-playlist-input-group input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary-color); /* Green border on focus */
+}
+
+.stream-input-group button,
+.youtube-playlist-input-group button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 14px 20px;
+  min-height: 48px;
+  border-radius: 25px; /* Pill-shaped buttons */
+  cursor: pointer;
+  font-size: 0.95em;
+  font-weight: 600;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.stream-input-group button:hover,
+.youtube-playlist-input-group button:hover {
+  background-color: #1ED760;
+  transform: translateY(-1px);
+}
+
+/* Visualizer */
+#visualizer {
+  background-color: var(--background-dark);
+  border-radius: 8px;
+  margin-bottom: 20px;
+  width: 100%;
+  height: 120px;
+  border: 1px solid var(--border-color);
+}
+
+/* Scrollbar Styling (for Webkit browsers like Chrome/Safari) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-dark);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+
+@media (max-width: 600px) {
+  body {
+    padding: 10px;
+  }
+
+  .container {
+    max-width: 100%;
+    border-radius: 0;
+  }
+
+  header {
+    flex-direction: column;
+    text-align: center;
+    padding: 15px 10px;
+  }
+
+  header h1 {
+      font-size: 1.6em;
+  }
+
+  main {
+      padding: 15px 10px;
+  }
+
+  .library-controls, .stream-input-group, .youtube-playlist-input-group {
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .library-controls .file-input-wrapper,
+  .stream-input-group input[type="text"],
+  .stream-input-group button,
+  .youtube-playlist-input-group input[type="text"],
+  .youtube-playlist-input-group button {
+    width: 100%;
+    font-size: 0.9em;
+    padding: 12px 15px;
+    min-height: 45px;
+  }
+
+  .library-filter-nav {
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 15px;
+  }
+
+  .library-filter-nav button {
+      padding: 8px 12px;
+      min-height: 38px;
+      font-size: 0.8em;
+  }
+
+  .library-list, .playlist-list {
+      max-height: 45vh; /* Adjust viewport height for lists on smaller screens */
+      border-radius: 6px;
+  }
+
+  .library-list li, .playlist-list li {
+      padding: 12px 15px;
+  }
+
+  .track-info strong {
+      font-size: 0.95em;
+  }
+
+  .track-info span {
+      font-size: 0.8em;
+  }
+
+  .playlist-actions button {
+      font-size: 1.3em;
+      margin-left: 8px;
+  }
+
+  .no-songs-message {
+      padding: 20px;
+      font-size: 1em;
+  }
+
+  .player-controls-container {
+      padding: 15px 10px;
+      gap: 15px;
+  }
+
+  .current-track-info h3 {
+      font-size: 1.1em;
+      margin-bottom: 5px;
+  }
+
+  .current-track-info p {
+      font-size: 0.85em;
+  }
+
+  .progress-bar-container {
+      height: 6px;
+      border-radius: 3px;
+  }
+
+  .progress-bar {
+      border-radius: 3px;
+  }
+
+  .time-info {
+      font-size: 0.8em;
+  }
+
+  .player-buttons {
+      gap: 20px;
+  }
+
+  .player-buttons button {
+      font-size: 2em;
+      padding: 5px;
+  }
+
+  .volume-controls {
+      gap: 10px;
+  }
+
+  .volume-controls input[type="range"]::-webkit-slider-thumb,
+  .volume-controls input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+  }
+
+  #visualizer {
+      height: 100px; /* Slightly smaller visualizer on mobile */
+  }
+}
