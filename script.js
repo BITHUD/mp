@@ -7,7 +7,7 @@
   // Instead, create a backend server (a "proxy") that securely stores the key
   // and makes requests to the YouTube API on behalf of your app.
   // For development, you can paste your key here, but do not commit it to version control.
-  const YOUTUBE_API_KEY = 'AIzaSyB-C1D2E3F4G5H6I7J8K9L0M1N2O3P4Q5R6'; // <--- REPLACE THIS LINE WITH YOUR ACTUAL KEY
+  const YOUTUBE_API_KEY = 'AIzaSyDBQ9OjY2XW8DY7-WpPb6Q2LURnWCzkoAY'; // <--- REPLACE THIS LINE WITH YOUR ACTUAL KEY FROM GOOGLE CLOUD CONSOLE
 
   // --- IndexedDB Setup ---
   const IDB_DATABASE_NAME = 'music-db';
@@ -317,7 +317,8 @@
    * @param {string} playlistId The ID of the YouTube playlist.
    */
   async function addYouTubePlaylist(playlistId) {
-      if (!AIzaSyB-C1D2E3F4G5H6I7J8K9L0M1N2O3P4Q5R6 || AIzaSyB-C1D2E3F4G5H6I7J8K9L0M1N2O3P4Q5R6 === 'PASTE YOUR YOUTUBE API KEY HERE FOR DEVELOPMENT') {
+      // Check if API key is configured
+      if (!YOUTUBE_API_KEY || YOUTUBE_API_KEY === 'PASTE YOUR YOUTUBE API KEY HERE FOR DEVELOPMENT') {
           showUIMessage("YouTube API Key is not configured. Please replace the placeholder.", 'error', 7000);
           return;
       }
@@ -329,6 +330,7 @@
 
       try {
           // Fetch playlist details (title)
+          // This call uses the YouTube Data API to get information about the playlist itself.
           const detailsUrl = `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${YOUTUBE_API_KEY}`;
           const detailsResponse = await fetch(detailsUrl);
           if (!detailsResponse.ok) throw new Error(`HTTP error! status: ${detailsResponse.status}`);
@@ -338,6 +340,8 @@
           }
 
           // Fetch playlist items (videos)
+          // This loop makes multiple calls to the YouTube Data API to get all videos in the playlist,
+          // handling pagination with nextPageToken.
           do {
               const itemsUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${YOUTUBE_API_KEY}${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`;
               const response = await fetch(itemsUrl);
@@ -359,6 +363,7 @@
                               album: playlistTitle,
                               genre: 'Video'
                           };
+                          // Prevent duplicate entries in the playlist
                           if (!playlist.some(t => t.id === videoId)) {
                               playlist.push(youtubeTrack);
                               videosAdded++;
@@ -944,3 +949,4 @@
     });
   }
 })(); // End of self-executing function
+c
