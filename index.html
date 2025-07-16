@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,21 +6,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Advanced Music Player</title>
 
-<!-- PWA Manifest Link (MUST remain a separate file: manifest.json) -->
 <link rel="manifest" href="/manifest.json">
 
-<!-- Apple Touch Icons and Meta for PWA -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Music Player">
 <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
 
-<!-- Google Fonts: Inter for a Spotify-like feel -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-<!-- Embedded Stylesheet (formerly styles.css) -->
+
 <style>
   /* Reset */
   * {
@@ -53,7 +51,7 @@
     min-height: 100vh;
     overflow-x: hidden; /* Prevent horizontal scrolling on mobile */
   }
-
+  
   /* --- UI Message/Notification Bar --- */
   .ui-message {
     position: fixed;
@@ -81,7 +79,7 @@
   .ui-message.info {
     background-color: #2196F3; /* Blue for info */
   }
-
+  
   .container {
     background-color: var(--background-medium);
     border-radius: 12px; /* Softer rounded corners */
@@ -461,7 +459,7 @@
     font-size: 0.95em;
     transition: border-color 0.2s ease;
   }
-
+  
   /* Input validation styles */
   .stream-input-group input[type="text"].valid,
   .youtube-playlist-input-group input[type="text"].valid {
@@ -662,61 +660,49 @@
     }
   }
 </style>
-
 </head>
 <body>
-  <!-- UI Message/Notification element for user feedback -->
   <div id="ui-message" class="ui-message"></div>
 
   <div class="container">
     <header>
       <h1>Advanced Music Player</h1>
       <div class="settings">
-        <!-- Settings or other header elements can go here -->
-      </div>
+        </div>
     </header>
 
-    <!-- Navigation tabs for Playlist and Library -->
     <nav class="tabs">
       <div class="tab-button active" id="playlist-tab-btn">Playlist</div>
       <div class="tab-button" id="library-tab-btn">Library</div>
     </nav>
 
     <main>
-      <!-- Playlist Tab Content -->
       <div class="tab-content active" id="playlist-tab">
         <ul class="playlist-list" id="playlist-list">
-          <!-- Playlist items will be rendered here by JavaScript -->
-        </ul>
+          </ul>
         <p id="no-playlist-message" class="no-songs-message" style="display: none;">Your playlist is empty. Add some music from the Library or by streaming!</p>
       </div>
 
-      <!-- Library Tab Content -->
       <div class="tab-content" id="library-tab">
         <div class="library-controls">
-          <!-- Input for adding local music files -->
           <div class="file-input-wrapper">
             <input type="file" id="add-music-file-input" accept="audio/*" multiple />
             <span>Add Local Music</span>
           </div>
-          <!-- Input for playing individual YouTube videos -->
           <input type="text" id="youtube-url-input" placeholder="Paste YouTube Video URL" />
           <button id="play-youtube-btn">Play YouTube Audio</button>
         </div>
 
-        <!-- Input for streaming audio from a URL -->
         <div class="stream-input-group">
             <input type="text" id="stream-url-input" placeholder="Enter MP3/AAC stream URL" />
             <button id="play-stream-btn">Play Stream</button>
         </div>
 
-        <!-- Section for adding YouTube Playlists -->
         <div class="youtube-playlist-input-group stream-input-group">
             <input type="text" id="youtube-playlist-url-input" placeholder="Enter YouTube Playlist URL" />
             <button id="add-youtube-playlist-btn">Add YouTube Playlist</button>
         </div>
 
-        <!-- Navigation for filtering library content -->
         <nav class="library-filter-nav">
           <button id="view-all-songs-btn">All Songs</button>
           <button id="view-albums-btn">Albums</button>
@@ -725,41 +711,33 @@
           <button id="clear-filter-btn">Clear Filter</button>
         </nav>
         <ul class="library-list" id="library-list">
-          <!-- Library items will be rendered here by JavaScript -->
-        </ul>
+          </ul>
         <p id="no-library-message" class="no-songs-message" style="display: none;">Your music library is empty. Add some local files!</p>
       </div>
     </main>
 
-    <!-- Player Controls Section -->
     <div class="player-controls-container">
-      <!-- Audio Visualizer Canvas -->
       <canvas id="visualizer"></canvas>
 
-      <!-- Current Track Information -->
       <div class="current-track-info">
         <h3 id="current-track-title">No track playing</h3>
         <p id="current-track-artist">Artist - Album</p>
       </div>
 
-      <!-- Progress Bar -->
       <div class="progress-bar-container" id="progress-bar-container">
         <div class="progress-bar" id="progress-bar"></div>
       </div>
-      <!-- Current Time and Duration Display -->
       <div class="time-info">
         <span id="current-time">0:00</span>
         <span id="duration">0:00</span>
       </div>
 
-      <!-- Playback Control Buttons -->
       <div class="player-buttons">
         <button id="prev-btn">⏮️</button>
         <button id="play-pause-btn">▶️</button>
         <button id="next-btn">⏭️</button>
       </div>
 
-      <!-- Volume Controls -->
       <div class="volume-controls">
         <span>🔇</span>
         <input type="range" id="volume-slider" min="0" max="100" value="75" />
@@ -768,13 +746,10 @@
     </div>
   </div>
 
-  <!-- Hidden div for YouTube IFrame Player -->
   <div id="youtube-player" style="display: none;"></div>
 
-  <!-- YouTube IFrame Player API Script (loaded asynchronously) -->
   <script src="https://www.youtube.com/iframe_api" async></script>
 
-  <!-- Embedded Main Application JavaScript (formerly script.js) -->
   <script>
     'use strict'; // Enable strict mode for better error checking
 
@@ -1022,7 +997,7 @@
        */
       function onPlayerError(event) {
           console.error('YouTube Player Error:', event.data);
-          showUIMessage(`YouTube player error: ${event.data}`, 'error');
+          showUIMessage(`Youtubeer error: ${event.data}`, 'error');
           playNextTrack(); // Try to play the next track
       }
 
@@ -1095,7 +1070,7 @@
        * @param {string} playlistId The ID of the YouTube playlist.
        */
       async function addYouTubePlaylist(playlistId) {
-          if (!AIzaSyB-C1D2E3F4G5H6I7J8K9L0M1N2O3P4Q5R6 || AIzaSyB-C1D2E3F4G5H6I7J8K9L0M1N2O3P4Q5R6 === 'PASTE YOUR YOUTUBE API KEY HERE FOR DEVELOPMENT') {
+          if (!YOUTUBE_API_KEY || YOUTUBE_API_KEY === 'PASTE YOUR YOUTUBE API KEY HERE FOR DEVELOPMENT') {
               showUIMessage("YouTube API Key is not configured. Please replace the placeholder.", 'error', 7000);
               return;
           }
@@ -1713,9 +1688,7 @@
 
       init();
 
-      // Service Worker Registration (MUST remain a separate file: service-worker.js)
-      // This code snippet is kept here to remind you that service-worker.js needs to be registered.
-      // The actual service-worker.js file must exist in your project's root.
+      // Service Worker Registration
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/service-worker.js')
@@ -1723,7 +1696,7 @@
             .catch((err) => console.error('Service Worker registration failed:', err));
         });
       }
-    })(); // End of self-executing function
+    })();
   </script>
 </body>
 </html>
