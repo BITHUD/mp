@@ -1,9 +1,8 @@
-const CACHE_NAME = 'music-player-cache-v3'; // Increment version to trigger update!
-const urlsToCache = [
-  '/', // Caches the root path, typically your index.html
+const CACHE_NAME = 'music-player-cache-v4'; // Incremented version for update
+const APP_SHELL_URLS = [
+  '/',
   '/index.html',
-  '/manifest.json', // Add your manifest file
-  // Add all your icon paths as specified in manifest.json
+  '/manifest.json',
   '/icons/icon-72x72.png',
   '/icons/icon-96x96.png',
   '/icons/icon-128x128.png',
@@ -12,43 +11,15 @@ const urlsToCache = [
   '/icons/icon-192x192.png',
   '/icons/icon-384x384.png',
   '/icons/icon-512x512.png',
-  // You might want to cache some fallback UI images or other small static assets here
 ];
 
-// IndexedDB Constants for Service Worker
-const IDB_DATABASE_NAME = 'music-db';
-const IDB_STORE_NAME = 'tracks';
-
-// Helper function to open IndexedDB (can be reused in main script)
-function openIndexedDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(IDB_DATABASE_NAME, 1); // Version 1
-
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains(IDB_STORE_NAME)) {
-        db.createObjectStore(IDB_STORE_NAME, { keyPath: 'id' }); // Use track ID as key
-      }
-    };
-
-    request.onsuccess = (event) => {
-      resolve(event.target.result);
-    };
-
-    request.onerror = (event) => {
-      console.error('Service Worker: IndexedDB error:', event.target.error);
-      reject(event.target.error);
-    };
-  });
-}
-
-// Install event: This is where you pre-cache essential assets when the service worker is first installed.
+// Install event: Pre-cache the application shell.
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Service Worker: Caching app shell');
-        return cache.addAll(urlsToCache);
+        return cache.addAll(APP_SHELL_URLS);
       })
       .catch((error) => {
         console.error('Service Worker: Failed to cache on install', error);
@@ -56,108 +27,13 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Fetch event: This intercepts network requests made by the page.
-// It tries to serve content from the cache first, then falls back to the network.
-self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-
-  // Check if it's a request for a locally stored music file (using our custom protocol)
-  if (url.protocol === 'indexeddb:') {
-    const trackId = url.hostname; // The track ID will be the hostname in indexeddb://<trackId>
-
-    event.respondWith(
-      new Promise(async (resolve, reject) => {
-        try {
-          const db = await openIndexedDB();
-          const transaction = db.transaction([IDB_STORE_NAME], 'readonly');
-          const store = transaction.objectStore(IDB_STORE_NAME);
-          const request = store.get(trackId);
-
-          request.onsuccess = () => {
-            const trackData = request.result;
-            if (trackData && trackData.audioBlob) {
-              console.log(`Service Worker: Serving track ${trackId} from IndexedDB cache.`);
-              resolve(new Response(trackData.audioBlob, {
-                headers: { 'Content-Type': trackData.mimeType || 'audio/mpeg' } // Use stored MIME type or default
-              }));
-            } else {
-              console.warn(`Service Worker: Track ${trackId} not found in IndexedDB. Fetching from network (fallback).`);
-              // If not found in IndexedDB, fall back to network for the original URL (if available)
-              // This part assumes the original URL can be reconstructed or is stored elsewhere.
-              // For simplicity, we'll just return a 404 if not found via custom protocol.
-              resolve(new Response('Track not found in IndexedDB', { status: 404 }));
-            }
-          };
-
-          request.onerror = (e) => {
-            console.error('Service Worker: IndexedDB get error:', e.target.error);
-            reject(e.target.error);
-          };
-        } catch (error) {
-          console.error('Service Worker: Error opening IndexedDB for fetch:', error);
-          reject(error);
-        }
-      })
-    );
-    return; // Important: Stop default fetch handling if it's an IndexedDB request
-  }
-
-  // --- Existing cache-first, then network strategy for other assets ---
-  event.respondWith(
-    caches.match(event.request) // Try to find the request in the current cache.
-      .then((response) => {
-        // If the resource is in the cache, return it.
-        if (response) {
-          return response;
-        }
-
-        // If not in cache, fetch from the network.
-        return fetch(event.request)
-          .then((networkResponse) => {
-            // Check if we received a valid response.
-            if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-              return networkResponse;
-            }
-
-            // IMPORTANT: Clone the response. A response is a stream and can only be consumed once.
-            const responseToCache = networkResponse.clone();
-
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                // Only cache GET requests, and typically exclude very large media files directly here.
-                // Large media files should be handled by IndexedDB as implemented in index.html.
-                const requestUrl = event.request.url;
-                if (event.request.method === 'GET' &&
-                    !requestUrl.includes('.mp3') &&
-                    !requestUrl.includes('.wav') &&
-                    !requestUrl.includes('.ogg') &&
-                    !requestUrl.includes('.aac')) {
-                    cache.put(event.request, responseToCache);
-                }
-              });
-
-            return networkResponse; // Return the network response to the browser.
-          })
-          .catch(() => {
-            // This catch block handles network errors.
-            console.log('Service Worker: Fetch failed, request not in cache and network unavailable:', event.request.url);
-            // You could return a specific offline fallback page here if desired.
-          });
-      })
-  );
-});
-
-// Activate event: This is triggered when the service worker becomes active.
-// It's commonly used to clean up old caches, ensuring users don't get stale content.
+// Activate event: Clean up old caches.
 self.addEventListener('activate', (event) => {
-  const cacheWhitelist = [CACHE_NAME]; // Only keep caches with names in this whitelist.
-
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          // If a cache name is not in the whitelist, delete it.
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
+          if (cacheName !== CACHE_NAME) {
             console.log('Service Worker: Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -165,4 +41,86 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+  return self.clients.claim();
+});
+
+// Fetch event: Intercept network requests.
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Use a "stale-while-revalidate" strategy for YouTube API requests.
+  // This serves a cached response immediately (if available) for a fast offline experience,
+  // then fetches an updated version from the network to update the cache for next time.
+  if (url.hostname === 'www.googleapis.com') {
+    event.respondWith(
+      caches.open(CACHE_NAME).then((cache) => {
+        return cache.match(request).then((cachedResponse) => {
+          const fetchPromise = fetch(request).then((networkResponse) => {
+            // If the fetch is successful, clone it and put it in the cache.
+            if (networkResponse.ok) {
+              cache.put(request, networkResponse.clone());
+            }
+            return networkResponse;
+          });
+
+          // Return the cached response immediately if it exists, otherwise wait for the network.
+          return cachedResponse || fetchPromise;
+        });
+      })
+    );
+    return;
+  }
+  
+  // NOTE on caching audio/video streams:
+  // Caching media from services like YouTube directly via a service worker can violate
+  // their Terms of Service and is technically complex. It often requires a server-side
+  // component to fetch and relay the media stream.
+  // For direct audio streams (.mp3, .aac), you could implement a dynamic caching
+  // strategy here, but it's complex due to potential large file sizes and byte-range requests.
+  // The current implementation focuses on caching app shell and API data for a robust offline UI.
+
+  // For all other requests, use a cache-first strategy.
+  event.respondWith(
+    caches.match(request)
+      .then((response) => {
+        return response || fetch(request).then((networkResponse) => {
+          // Optionally, cache other static assets dynamically if needed.
+          // Be careful not to cache very large files or opaque responses.
+          if (networkResponse.ok && request.method === 'GET' && !APP_SHELL_URLS.includes(url.pathname)) {
+            // Example: Caching fonts or other static assets
+            // const responseToCache = networkResponse.clone();
+            // caches.open(CACHE_NAME).then(cache => cache.put(request, responseToCache));
+          }
+          return networkResponse;
+        });
+      })
+      .catch(() => {
+        // If both cache and network fail, you could return a fallback offline page.
+        console.warn('Service Worker: Fetch failed, request not in cache and network unavailable:', request.url);
+        // e.g., return caches.match('/offline.html');
+      })
+  );
+});
+
+
+// --- Advanced PWA Features (Stubs) ---
+
+// Background Sync: For retrying failed requests (e.g., adding to a playlist) when connection is restored.
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-playlist') {
+    console.log('Service Worker: Background sync for "sync-playlist" triggered.');
+    // Here you would typically read queued data from IndexedDB and send it to your server.
+    // event.waitUntil(syncPlaylistData()); 
+  }
+});
+
+// Periodic Background Sync: For fetching new content periodically.
+// Note: This requires user permission and is used sparingly by browsers.
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'get-latest-content') {
+    console.log('Service Worker: Periodic sync for "get-latest-content" triggered.');
+    // Here you could fetch updates for a followed playlist or new releases.
+    // event.waitUntil(fetchLatestContent());
+  }
 });
