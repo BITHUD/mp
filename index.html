@@ -1095,7 +1095,7 @@
        * @param {string} playlistId The ID of the YouTube playlist.
        */
       async function addYouTubePlaylist(playlistId) {
-          if (!YOUTUBE_API_KEY || AIzaSyB-C1D2E3F4G5H6I7J8K9L0M1N2O3P4Q5R6 === 'PASTE YOUR YOUTUBE API KEY HERE FOR DEVELOPMENT') {
+          if (!AIzaSyB-C1D2E3F4G5H6I7J8K9L0M1N2O3P4Q5R6 || AIzaSyB-C1D2E3F4G5H6I7J8K9L0M1N2O3P4Q5R6 === 'PASTE YOUR YOUTUBE API KEY HERE FOR DEVELOPMENT') {
               showUIMessage("YouTube API Key is not configured. Please replace the placeholder.", 'error', 7000);
               return;
           }
@@ -1107,7 +1107,7 @@
 
           try {
               // Fetch playlist details (title)
-              const detailsUrl = `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${AIzaSyB-C1D2E3F4G5H6I7J8K9L0M1N2O3P4Q5R6}`;
+              const detailsUrl = `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${YOUTUBE_API_KEY}`;
               const detailsResponse = await fetch(detailsUrl);
               if (!detailsResponse.ok) throw new Error(`HTTP error! status: ${detailsResponse.status}`);
               const detailsData = await detailsResponse.json();
@@ -1117,7 +1117,7 @@
 
               // Fetch playlist items (videos)
               do {
-                  const itemsUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${AIzaSyB-C1D2E3F4G5H6I7J8K9L0M1N2O3P4Q5R6}${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`;
+                  const itemsUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${YOUTUBE_API_KEY}${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`;
                   const response = await fetch(itemsUrl);
                   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                   const data = await response.json();

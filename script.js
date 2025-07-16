@@ -317,7 +317,7 @@
    * @param {string} playlistId The ID of the YouTube playlist.
    */
   async function addYouTubePlaylist(playlistId) {
-      if (!YOUTUBE_API_KEY || AIzaSyB-C1D2E3F4G5H6I7J8K9L0M1N2O3P4Q5R6 === 'PASTE YOUR YOUTUBE API KEY HERE FOR DEVELOPMENT') {
+      if (!AIzaSyB-C1D2E3F4G5H6I7J8K9L0M1N2O3P4Q5R6 || AIzaSyB-C1D2E3F4G5H6I7J8K9L0M1N2O3P4Q5R6 === 'PASTE YOUR YOUTUBE API KEY HERE FOR DEVELOPMENT') {
           showUIMessage("YouTube API Key is not configured. Please replace the placeholder.", 'error', 7000);
           return;
       }
