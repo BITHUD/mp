@@ -935,7 +935,7 @@
       // Instead, create a backend server (a "proxy") that securely stores the key
       // and makes requests to the YouTube API on behalf of your app.
       // For development, you can paste your key here, but do not commit it to version control.
-      const YOUTUBE_API_KEY = 'AIzaSyCN_uN5msPt1HrJpyrSMiG-9zXSVV2Uo1c'; // <--- REPLACE THIS LINE WITH YOUR ACTUAL KEY
+      const YOUTUBE_API_KEY = 'AIzaSyDBQ9OjY2XW8DY7-WpPb6Q2LURnWCzkoAY'; // <--- REPLACE THIS LINE WITH YOUR ACTUAL KEY
 
       // --- IndexedDB Setup ---
       const IDB_DATABASE_NAME = 'music-db';
@@ -1280,8 +1280,12 @@
        * Fetches and adds all videos from a YouTube playlist to the application's playlist.
        * @param {string} playlistId The ID of the YouTube playlist.
        */
-      async function addYouTubePlaylist(playlistId) 
-      
+      async function addYouTubePlaylist(playlistId) {
+          if (!YOUTUBE_API_KEY || YOUTUBE_API_KEY === 'AIzaSyDBQ9OjY2XW8DY7-WpPb6Q2LURnWCzkoAY') {
+              showUIMessage("YouTube API Key is not configured. Please replace the placeholder.", 'error', 7000);
+              return;
+          }
+
           let nextPageToken = '';
           let playlistTitle = 'YouTube Playlist';
           let videosAdded = 0;
