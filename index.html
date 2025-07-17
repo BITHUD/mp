@@ -307,6 +307,17 @@
     padding-left: 20px; /* Adjust padding due to border from !test.html */
   }
 
+  /* Styles for drag-and-drop */
+  .playlist-list li.dragging {
+      opacity: 0.5;
+      border: 2px dashed var(--primary-color);
+      background-color: var(--background-light);
+  }
+  .playlist-list li.drag-over {
+      border-top: 2px solid var(--primary-color);
+  }
+
+
   .track-info {
     flex-grow: 1;
     display: flex;
@@ -448,6 +459,19 @@
     transform: scale(1.15); /* More pronounced lift from !test.html */
   }
 
+  /* Repeat button specific styling */
+  .player-buttons button.repeat-one {
+      color: var(--primary-color);
+      transform: scale(1.1);
+      border: 1px solid var(--primary-color);
+  }
+  .player-buttons button.repeat-all {
+      color: var(--primary-color);
+      transform: scale(1.1);
+      border: 1px solid var(--primary-color);
+  }
+
+
   .volume-controls {
     display: flex;
     align-items: center;
@@ -540,7 +564,7 @@
   .stream-input-group input[type="text"].invalid,
   .youtube-playlist-input-group input[type="text"].invalid {
       border-color: var(--error-color);
-      box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.3); /* From !test.html */
+      box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.3);
   }
 
   .stream-input-group input[type="text"]:focus,
@@ -638,6 +662,24 @@
     border-color: #555555;
     transform: translateY(-1px);
   }
+
+  /* Loading Indicator */
+  .loading-indicator {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      z-index: 10;
+      display: none; /* Hidden by default */
+  }
+  .loading-indicator.show {
+      display: block;
+  }
+
 
   @media (max-width: 600px) {
     body {
@@ -786,7 +828,8 @@
 </style>
 </head>
 <body>
-  <div class="ui-message" id="uiMessage"></div>
+  <div class="ui-message" id="ui-message"></div>
+  <div class="loading-indicator" id="loading-indicator">Loading...</div>
 
   <div class="container">
     <header>
@@ -805,6 +848,8 @@
         <div class="playlist-controls">
           <button id="save-playlist-btn">Save Current Playlist</button>
           <button id="load-playlist-btn">Load Saved Playlist</button>
+          <button id="clear-playlist-btn">Clear Playlist</button>
+          <button id="shuffle-playlist-btn">Shuffle Playlist</button>
         </div>
         <ul class="playlist-list" id="playlist-list">
           </ul>
@@ -864,6 +909,8 @@
         <button id="prev-btn">⏮️</button>
         <button id="play-pause-btn">▶️</button>
         <button id="next-btn">⏭️</button>
+        <button id="repeat-btn" title="Repeat Off">🔁</button>
+        <button id="shuffle-btn" title="Shuffle Queue">🔀</button>
       </div>
 
       <div class="volume-controls">
@@ -930,6 +977,7 @@
 
       // --- UI Feedback ---
       const uiMessageElement = document.getElementById('ui-message');
+      const loadingIndicator = document.getElementById('loading-indicator'); // New loading indicator element
       let messageTimeout;
 
       /**
@@ -946,6 +994,14 @@
         messageTimeout = setTimeout(() => {
           uiMessageElement.classList.remove('show');
         }, duration);
+      }
+
+      /**
+       * Shows or hides the loading indicator.
+       * @param {boolean} show True to show, false to hide.
+       */
+      function showLoadingIndicator(show) {
+          loadingIndicator.classList.toggle('show', show);
       }
       
       // --- Audio Context and Visualizer ---
@@ -1042,6 +1098,10 @@
       let audio = new Audio(); // HTML5 Audio element for local files and direct streams
       let isPlaying = false;
       let currentTrackType = 'local'; // 'local', 'stream', or 'youtube'
+      let repeatMode = 'off'; // 'off', 'one', 'all'
+      let originalPlaylistOrder = []; // To store playlist order before shuffle
+      let notificationPermission = 'default'; // 'default', 'granted', 'denied'
+
 
       // --- DOM Elements ---
       const addMusicFileInput = document.getElementById('add-music-file-input');
@@ -1088,6 +1148,9 @@
       // New Playlist Saving/Loading Buttons
       const savePlaylistBtn = document.getElementById('save-playlist-btn');
       const loadPlaylistBtn = document.getElementById('load-playlist-btn');
+      const clearPlaylistBtn = document.getElementById('clear-playlist-btn'); // Added clear playlist button
+      const shufflePlaylistBtn = document.getElementById('shuffle-playlist-btn'); // Added shuffle playlist button
+      const repeatBtn = document.getElementById('repeat-btn'); // Added repeat button
 
 
       // --- YouTube IFrame Player API Functions ---
@@ -1135,7 +1198,8 @@
        */
       function onPlayerError(event) {
           console.error('YouTube Player Error:', event.data);
-          showUIMessage(`Youtubeer error: ${event.data}`, 'error');
+          showUIMessage(`YouTube player error: ${event.data}`, 'error');
+          showLoadingIndicator(false); // Hide loading indicator on error
           playNextTrack(); // Try to play the next track
       }
 
@@ -1151,13 +1215,21 @@
                   isPlaying = true;
                   updatePlayPauseButton();
                   updateMediaSession();
+                  showLoadingIndicator(false); // Hide loading indicator when playing
+                  sendNowPlayingNotification(); // Send notification
                   break;
               case YT.PlayerState.PAUSED:
                   isPlaying = false;
                   updatePlayPauseButton();
                   break;
               case YT.PlayerState.ENDED:
-                  playNextTrack(); // Auto-play next if YouTube track ends
+                  handleTrackEnded(); // Use the common track ended handler
+                  break;
+              case YT.PlayerState.BUFFERING:
+                  showLoadingIndicator(true); // Show loading indicator when buffering
+                  break;
+              case YT.PlayerState.CUED: // When video is cued but not yet playing
+                  showLoadingIndicator(true);
                   break;
           }
           updateProgressBarAndTimer(); // Update UI for YouTube playback
@@ -1179,6 +1251,7 @@
           isPlaying = true;
           updatePlayPauseButton();
           updateCurrentTrackInfo();
+          showLoadingIndicator(true); // Show loading indicator immediately
       }
 
       /**
@@ -1217,6 +1290,7 @@
           let playlistTitle = 'YouTube Playlist';
           let videosAdded = 0;
           showUIMessage('Fetching playlist...', 'info', 10000);
+          showLoadingIndicator(true); // Show loading indicator for network request
 
           try {
               // Fetch playlist details (title)
@@ -1250,7 +1324,8 @@
                                   album: playlistTitle,
                                   genre: 'Video'
                               };
-                              if (!playlist.some(t => t.id === videoId)) {
+                              // Check for duplicates before adding
+                              if (!playlist.some(t => t.id === videoId && t.type === 'youtube')) {
                                   playlist.push(youtubeTrack);
                                   videosAdded++;
                               }
@@ -1269,6 +1344,8 @@
           } catch (error) {
               console.error("Error fetching YouTube playlist:", error);
               showUIMessage('Failed to fetch playlist. Check URL or API key.', 'error', 5000);
+          } finally {
+              showLoadingIndicator(false); // Hide loading indicator after fetch
           }
       }
 
@@ -1282,6 +1359,7 @@
         if (playlist.length === 0 || currentTrackIndex === -1) {
             pauseCurrentTrack();
             updateCurrentTrackInfo(); // Update UI to show "No track playing"
+            showLoadingIndicator(false);
             return;
         }
 
@@ -1294,16 +1372,28 @@
         }
 
         currentTrackType = track.type;
+        showLoadingIndicator(true); // Show loading indicator before playing new track
 
         if (track.type === 'youtube') {
             playYouTubeAudio(track.videoId);
         } else {
             // This handles both 'local' and 'stream' types
             audio.src = track.type === 'local' ? URL.createObjectURL(track.file) : track.url;
-            audio.play().catch(e => {
-                console.error("Error playing audio:", e);
-                showUIMessage(`Could not play track: ${track.title}`, 'error');
-            });
+            audio.play()
+                .then(() => {
+                    isPlaying = true;
+                    updatePlayPauseButton();
+                    updateCurrentTrackInfo();
+                    renderPlaylist();
+                    updateMediaSession(); // Update media session when track changes
+                    showLoadingIndicator(false); // Hide loading indicator when playing
+                    sendNowPlayingNotification(); // Send notification
+                })
+                .catch(e => {
+                    console.error("Error playing audio:", e);
+                    showUIMessage(`Could not play track: ${track.title}`, 'error');
+                    showLoadingIndicator(false); // Hide loading indicator on error
+                });
             if (audioContext) {
                 // This requires a Cross-Origin header for streams, may not always work
                 try {
@@ -1316,11 +1406,7 @@
             }
         }
 
-        isPlaying = true;
-        updatePlayPauseButton();
-        updateCurrentTrackInfo();
-        renderPlaylist();
-        updateMediaSession(); // Update media session when track changes
+        renderPlaylist(); // Re-render to highlight playing track
       }
 
       /**
@@ -1334,6 +1420,7 @@
         }
         isPlaying = false;
         updatePlayPauseButton();
+        showLoadingIndicator(false); // Hide loading indicator on pause
       }
 
       /**
@@ -1352,6 +1439,30 @@
       }
 
       /**
+       * Handles logic when a track ends.
+       */
+      function handleTrackEnded() {
+          if (repeatMode === 'one') {
+              playCurrentTrack(); // Replay the current track
+          } else if (repeatMode === 'all') {
+              playNextTrack(); // Play next, will loop to start if at end
+          } else {
+              // No repeat, move to next or stop
+              if (currentTrackIndex < playlist.length - 1) {
+                  playNextTrack();
+              } else {
+                  // End of playlist
+                  pauseCurrentTrack();
+                  if (currentTrackType === 'youtube' && youtubePlayer) youtubePlayer.stopVideo();
+                  currentTrackIndex = -1;
+                  updateCurrentTrackInfo();
+                  renderPlaylist();
+                  showUIMessage('Playlist finished.', 'info');
+              }
+          }
+      }
+
+      /**
        * Plays the next track in the playlist.
        */
       function playNextTrack() {
@@ -1367,6 +1478,59 @@
         if (playlist.length === 0) return;
         currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
         playCurrentTrack();
+      }
+
+      /**
+       * Toggles repeat mode: off -> one -> all -> off.
+       */
+      function toggleRepeatMode() {
+          if (repeatMode === 'off') {
+              repeatMode = 'one';
+              repeatBtn.textContent = ' '; // Repeat one icon
+              repeatBtn.title = 'Repeat One';
+              repeatBtn.classList.add('repeat-one');
+              repeatBtn.classList.remove('repeat-all');
+              showUIMessage('Repeat: One Track', 'info', 1500);
+          } else if (repeatMode === 'one') {
+              repeatMode = 'all';
+              repeatBtn.textContent = '🔁'; // Repeat all icon
+              repeatBtn.title = 'Repeat All';
+              repeatBtn.classList.remove('repeat-one');
+              repeatBtn.classList.add('repeat-all');
+              showUIMessage('Repeat: All Tracks', 'info', 1500);
+          } else {
+              repeatMode = 'off';
+              repeatBtn.textContent = '🔁'; // Repeat off icon (default)
+              repeatBtn.title = 'Repeat Off';
+              repeatBtn.classList.remove('repeat-one', 'repeat-all');
+              showUIMessage('Repeat: Off', 'info', 1500);
+          }
+      }
+
+      /**
+       * Shuffles the current playlist.
+       */
+      function shufflePlaylist() {
+          if (playlist.length <= 1) {
+              showUIMessage('Not enough tracks to shuffle.', 'info');
+              return;
+          }
+          // Save original order before shuffling
+          originalPlaylistOrder = [...playlist];
+
+          for (let i = playlist.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [playlist[i], playlist[j]] = [playlist[j], playlist[i]];
+          }
+          
+          // If a track was playing, find its new index
+          if (currentTrackIndex !== -1) {
+              const currentTrack = playlist[currentTrackIndex]; // Get the track object
+              currentTrackIndex = playlist.findIndex(track => track.id === currentTrack.id && track.type === currentTrack.type);
+          }
+
+          renderPlaylist();
+          showUIMessage('Playlist shuffled!', 'success');
       }
 
       /**
@@ -1454,6 +1618,50 @@
           }
       }
 
+      // --- Web Notifications ---
+      /**
+       * Requests permission for Web Notifications.
+       */
+      function requestNotificationPermission() {
+          if (!('Notification' in window)) {
+              console.warn("This browser does not support notifications.");
+              return;
+          }
+          if (Notification.permission === 'granted') {
+              notificationPermission = 'granted';
+          } else if (Notification.permission === 'denied') {
+              notificationPermission = 'denied';
+          } else {
+              Notification.requestPermission().then(permission => {
+                  notificationPermission = permission;
+                  if (permission === 'granted') {
+                      showUIMessage('Notification permission granted!', 'success', 2000);
+                  } else {
+                      showUIMessage('Notification permission denied. Cannot show "Now Playing" alerts.', 'info', 3000);
+                  }
+              });
+          }
+      }
+
+      /**
+       * Sends a "Now Playing" notification.
+       */
+      function sendNowPlayingNotification() {
+          if (notificationPermission === 'granted' && currentTrackIndex !== -1 && playlist[currentTrackIndex]) {
+              const track = playlist[currentTrackIndex];
+              const title = track.title || 'Unknown Title';
+              const artist = track.artist || 'Unknown Artist';
+              const album = track.album || 'Unknown Album';
+
+              new Notification('Now Playing', {
+                  body: `${title}\n${artist} - ${album}`,
+                  icon: '/icons/icon-192x192.png', // Use your app icon
+                  silent: true // Prevents notification sound/vibration
+              });
+          }
+      }
+
+
       // --- Track Adding and Rendering ---
       /**
        * Adds local audio files selected by the user to the library and IndexedDB.
@@ -1529,8 +1737,12 @@
               id: track.id,
               type: track.type,
               url: track.url || null, // For streams
-              videoId: track.videoId || null // For YouTube
+              videoId: track.videoId || null, // For YouTube
               // Local files will be re-matched by their ID from the main library
+              title: track.title, // Include title for easier display during load
+              artist: track.artist,
+              album: track.album,
+              genre: track.genre
           }));
 
           try {
@@ -1620,6 +1832,20 @@
               showUIMessage("Failed to load playlist.", 'error');
           }
       }
+
+      /**
+       * Clears all songs from the current playlist.
+       */
+      function clearPlaylist() {
+          pauseCurrentTrack();
+          if (currentTrackType === 'youtube' && youtubePlayer) youtubePlayer.stopVideo();
+          currentTrackIndex = -1;
+          playlist = [];
+          renderPlaylist();
+          updateCurrentTrackInfo();
+          showUIMessage('Playlist cleared.', 'info');
+      }
+
 
       /**
        * Renders the music library list based on the specified filter type and value.
@@ -1730,7 +1956,7 @@
             event.stopPropagation();
             const trackIdToAdd = parseFloat(event.target.dataset.trackId);
             const trackToAdd = library.find(t => t.id === trackIdToAdd);
-            if (trackToAdd && !playlist.some(p => p.id === trackToAdd.id)) {
+            if (trackToAdd && !playlist.some(p => p.id === trackToAdd.id && p.type === trackToAdd.type)) {
                 playlist.push(trackToAdd);
                 renderPlaylist();
                 showUIMessage(`Added "${trackToAdd.title}" to playlist`, 'success');
@@ -1749,10 +1975,13 @@
         playlistList.innerHTML = '';
         noPlaylistMessage.style.display = playlist.length === 0 ? 'block' : 'none';
 
+        if (playlist.length === 0) return;
+
         playlist.forEach((track, index) => {
           const li = document.createElement('li');
           li.dataset.index = index;
           li.classList.toggle('playing', index === currentTrackIndex);
+          li.draggable = true; // Enable drag for reordering
 
           const displayTitle = track.type === 'youtube' ? `YouTube: ${track.title}` : (track.title || track.name);
           const displayArtist = track.artist ? `${track.artist} - ${track.album || 'Unknown Album'}` : 'Unknown Artist';
@@ -1768,9 +1997,12 @@
           `;
           playlistList.appendChild(li);
 
-          li.addEventListener('click', () => {
-            currentTrackIndex = index;
-            playCurrentTrack();
+          li.addEventListener('click', (event) => {
+            // Only play if the click is not on the remove button
+            if (!event.target.closest('.remove-from-playlist-btn')) {
+                currentTrackIndex = index;
+                playCurrentTrack();
+            }
           });
 
           li.querySelector('.remove-from-playlist-btn').addEventListener('click', (event) => {
@@ -1786,10 +2018,81 @@
               currentTrackIndex--;
             }
             playlist.splice(indexToRemove, 1);
-            renderPlaylist();
+            renderPlaylist(); // Re-render to update indices and display
+            showUIMessage('Track removed from playlist.', 'info');
           });
         });
+        setupDragAndDrop(); // Setup drag-and-drop after rendering
       }
+
+      /**
+       * Sets up drag and drop functionality for playlist items.
+       */
+      function setupDragAndDrop() {
+          let dragSrcEl = null;
+
+          function handleDragStart(e) {
+              dragSrcEl = this;
+              e.dataTransfer.effectAllowed = 'move';
+              e.dataTransfer.setData('text/html', this.innerHTML);
+              this.classList.add('dragging');
+          }
+
+          function handleDragOver(e) {
+              e.preventDefault(); // Necessary to allow drop
+              e.dataTransfer.dropEffect = 'move';
+              if (this !== dragSrcEl && !this.classList.contains('drag-over')) {
+                  this.classList.add('drag-over');
+              }
+          }
+
+          function handleDragLeave(e) {
+              this.classList.remove('drag-over');
+          }
+
+          function handleDrop(e) {
+              e.stopPropagation(); // Stops some browsers from redirecting.
+              this.classList.remove('drag-over');
+
+              if (dragSrcEl !== this) {
+                  const fromIndex = parseInt(dragSrcEl.dataset.index);
+                  const toIndex = parseInt(this.dataset.index);
+
+                  // Reorder the playlist array
+                  const [movedItem] = playlist.splice(fromIndex, 1);
+                  playlist.splice(toIndex, 0, movedItem);
+
+                  // Adjust currentTrackIndex if the playing song was moved
+                  if (currentTrackIndex === fromIndex) {
+                      currentTrackIndex = toIndex;
+                  } else if (currentTrackIndex >= Math.min(fromIndex, toIndex) && currentTrackIndex <= Math.max(fromIndex, toIndex)) {
+                      // If the playing song was between the start and end of the move
+                      if (fromIndex < toIndex) { // Moved down
+                          currentTrackIndex--;
+                      } else { // Moved up
+                          currentTrackIndex++;
+                      }
+                  }
+                  renderPlaylist(); // Re-render the playlist to reflect new order and indices
+                  showUIMessage('Playlist reordered.', 'info', 1500);
+              }
+          }
+
+          function handleDragEnd(e) {
+              document.querySelectorAll('.playlist-list li').forEach(item => {
+                  item.classList.remove('dragging', 'drag-over');
+              });
+          }
+
+          document.querySelectorAll('.playlist-list li').forEach(item => {
+              item.addEventListener('dragstart', handleDragStart, false);
+              item.addEventListener('dragover', handleDragOver, false);
+              item.addEventListener('dragleave', handleDragLeave, false);
+              item.addEventListener('drop', handleDrop, false);
+              item.addEventListener('dragend', handleDragEnd, false);
+          });
+      }
+
 
       /**
        * Shows the specified tab content and updates tab button active state.
@@ -1847,11 +2150,17 @@
               name: url.split('/').pop() || 'Streaming Audio',
               url: url, type: 'stream', title: 'Streaming Audio', artist: 'Remote Stream', album: 'Live Stream'
             };
-            playlist.push(streamTrack);
-            currentTrackIndex = playlist.length - 1;
-            playCurrentTrack();
-            streamUrlInput.value = '';
-            streamUrlInput.classList.remove('valid', 'invalid');
+            // Check for duplicates before adding
+            if (!playlist.some(t => t.url === url && t.type === 'stream')) {
+                playlist.push(streamTrack);
+                currentTrackIndex = playlist.length - 1;
+                playCurrentTrack();
+                streamUrlInput.value = '';
+                streamUrlInput.classList.remove('valid', 'invalid');
+                showUIMessage(`Added stream: ${streamTrack.title}`, 'success');
+            } else {
+                showUIMessage('This stream is already in the playlist.', 'info');
+            }
           } else {
             showUIMessage('Please enter a valid stream URL.', 'error');
           }
@@ -1865,12 +2174,14 @@
                     id: videoId, url: youtubeUrl, videoId: videoId, type: 'youtube',
                     title: 'YouTube Video', artist: 'YouTube', album: 'YouTube'
                 };
-                const existingIndex = playlist.findIndex(t => t.id === videoId);
+                const existingIndex = playlist.findIndex(t => t.id === videoId && t.type === 'youtube');
                 if (existingIndex === -1) {
                     playlist.push(youtubeTrack);
                     currentTrackIndex = playlist.length - 1;
+                    showUIMessage(`Added YouTube video: ${youtubeTrack.title}`, 'success');
                 } else {
                     currentTrackIndex = existingIndex;
+                    showUIMessage(`YouTube video is already in playlist. Playing existing.`, 'info');
                 }
                 playCurrentTrack();
                 youtubeUrlInput.value = '';
@@ -1895,7 +2206,8 @@
         // Real-time URL validation
         const youtubeVideoRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]{11}/;
         const youtubePlaylistRegex = /^(https?:\/\/)?(www\.)?youtube\.com\/playlist\?list=[a-zA-Z0-9_-]+/;
-        const streamRegex = /^(https?:\/\/).*\.(mp3|aac|ogg|m4a)(\?.*)?$/i;
+        // Improved stream regex to be more permissive for common audio formats
+        const streamRegex = /^(https?:\/\/).*\.(mp3|aac|ogg|m4a|wav|flac)(\?.*)?$/i;
 
         youtubeUrlInput.addEventListener('input', () => validateUrlInput(youtubeUrlInput, youtubeVideoRegex));
         youtubePlaylistUrlInput.addEventListener('input', () => validateUrlInput(youtubePlaylistUrlInput, youtubePlaylistRegex));
@@ -1905,13 +2217,19 @@
         playPauseBtn.addEventListener('click', togglePlayPause);
         prevBtn.addEventListener('click', playPrevTrack);
         nextBtn.addEventListener('click', playNextTrack);
+        repeatBtn.addEventListener('click', toggleRepeatMode); // New repeat button listener
+        shufflePlaylistBtn.addEventListener('click', shufflePlaylist); // New shuffle button listener
+        clearPlaylistBtn.addEventListener('click', clearPlaylist); // New clear playlist button listener
+
 
         // Audio element events
         audio.addEventListener('timeupdate', updateProgressBarAndTimer);
-        audio.addEventListener('ended', playNextTrack);
-        audio.addEventListener('play', () => { isPlaying = true; updatePlayPauseButton(); updateMediaSession(); });
-        audio.addEventListener('pause', () => { isPlaying = false; updatePlayPauseButton(); });
-        audio.addEventListener('error', () => showUIMessage('Error playing audio file.', 'error'));
+        audio.addEventListener('ended', handleTrackEnded); // Use common ended handler
+        audio.addEventListener('play', () => { isPlaying = true; updatePlayPauseButton(); updateMediaSession(); showLoadingIndicator(false); sendNowPlayingNotification(); });
+        audio.addEventListener('pause', () => { isPlaying = false; updatePlayPauseButton(); showLoadingIndicator(false); });
+        audio.addEventListener('waiting', () => { if (isPlaying) showLoadingIndicator(true); }); // Show loading when buffering
+        audio.addEventListener('playing', () => showLoadingIndicator(false)); // Hide loading when playback resumes
+        audio.addEventListener('error', () => { showUIMessage('Error playing audio file.', 'error'); showLoadingIndicator(false); });
 
         volumeSlider.addEventListener('input', (event) => {
           const volume = event.target.value / 100;
@@ -1944,6 +2262,51 @@
         // New playlist saving/loading buttons
         savePlaylistBtn.addEventListener('click', saveCurrentPlaylist);
         loadPlaylistBtn.addEventListener('click', loadSavedPlaylist);
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (event) => {
+            // Prevent default browser actions for media keys if handled by player
+            if (event.key === ' ' || event.key === 'ArrowRight' || event.key === 'ArrowLeft' || event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                event.preventDefault();
+            }
+
+            switch (event.key) {
+                case ' ': // Spacebar for Play/Pause
+                    togglePlayPause();
+                    break;
+                case 'ArrowRight': // Right arrow for Next Track
+                    playNextTrack();
+                    break;
+                case 'ArrowLeft': // Left arrow for Previous Track
+                    playPrevTrack();
+                    break;
+                case 'ArrowUp': // Up arrow for Volume Up
+                    volumeSlider.value = Math.min(100, parseInt(volumeSlider.value) + 5);
+                    volumeSlider.dispatchEvent(new Event('input')); // Trigger input event to update volume
+                    break;
+                case 'ArrowDown': // Down arrow for Volume Down
+                    volumeSlider.value = Math.max(0, parseInt(volumeSlider.value) - 5);
+                    volumeSlider.dispatchEvent(new Event('input')); // Trigger input event to update volume
+                    break;
+                case 'm': // Mute/Unmute (simple toggle)
+                    if (audio.volume > 0) {
+                        audio.dataset.previousVolume = audio.volume; // Store current volume
+                        audio.volume = 0;
+                        volumeSlider.value = 0;
+                    } else {
+                        audio.volume = parseFloat(audio.dataset.previousVolume) || 0.75; // Restore or default
+                        volumeSlider.value = audio.volume * 100;
+                    }
+                    volumeSlider.dispatchEvent(new Event('input')); // Update slider visually
+                    break;
+                case 'r': // 'r' for Repeat Mode
+                    toggleRepeatMode();
+                    break;
+                case 's': // 's' for Shuffle
+                    shufflePlaylist();
+                    break;
+            }
+        });
       }
 
       // --- Initialization ---
@@ -1956,6 +2319,7 @@
         
         initEventListeners();
         setupMediaSessionHandlers();
+        requestNotificationPermission(); // Request notification permission on init
         
         // Handle URL hash for PWA shortcuts
         const tab = window.location.hash.substring(1);
@@ -1984,3 +2348,4 @@
   </script>
 </body>
 </html>
+ 
