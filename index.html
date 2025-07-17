@@ -16,7 +16,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-
 <style>
   /* Reset */
   * {
@@ -44,6 +43,7 @@
     color: var(--text-color);
     margin: 0;
     padding: 20px;
+    padding-bottom: 50px; /* Added padding to bottom of body from !test.html */
     display: flex;
     justify-content: center;
     align-items: flex-start; /* Align to top to allow more space for content */
@@ -62,27 +62,33 @@
     color: white;
     font-weight: 500;
     z-index: 1000;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6); /* More pronounced shadow from !test.html */
     transition: top 0.4s ease-in-out;
     text-align: center;
+    background-color: rgba(40, 40, 40, 0.95); /* Slightly less transparent background from !test.html */
+    backdrop-filter: blur(8px); /* Frosted glass effect from !test.html */
+    -webkit-backdrop-filter: blur(8px); /* For Safari from !test.html */
   }
   .ui-message.show {
     top: 20px;
   }
   .ui-message.error {
     background-color: var(--error-color);
+    box-shadow: 0 6px 20px rgba(244, 67, 54, 0.5); /* Matching shadow from !test.html */
   }
   .ui-message.success {
     background-color: var(--primary-color);
+    box-shadow: 0 6px 20px rgba(29, 185, 84, 0.5); /* Matching shadow from !test.html */
   }
   .ui-message.info {
     background-color: #2196F3; /* Blue for info */
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.5); /* From !test.html */
   }
   
   .container {
     background-color: var(--background-medium);
-    border-radius: 12px; /* Softer rounded corners */
-    box-shadow: 0 8px 30px var(--shadow-color);
+    border-radius: 16px; /* Softer rounded corners, increased slightly from !test.html */
+    box-shadow: 0 12px 45px var(--shadow-color); /* Increased shadow for more depth from !test.html */
     width: 100%;
     max-width: 900px;
     display: flex;
@@ -92,7 +98,7 @@
 
   header {
     background-color: var(--background-light);
-    padding: 20px 25px; /* More padding */
+    padding: 25px 30px; /* More padding from !test.html */
     border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
@@ -101,9 +107,10 @@
 
   header h1 {
     margin: 0;
-    font-size: 1.8em; /* Slightly larger title */
+    font-size: 2.3em; /* Slightly larger title from !test.html */
     color: var(--primary-color);
     font-weight: 700; /* Bolder */
+    letter-spacing: -0.03em; /* Tighter letter spacing for titles from !test.html */
   }
 
   nav.tabs {
@@ -120,8 +127,9 @@
     color: var(--text-muted);
     font-weight: 600; /* Semi-bold */
     cursor: pointer;
-    transition: background-color 0.2s, color 0.2s;
+    transition: background-color 0.25s ease, color 0.25s ease, border-bottom 0.25s ease; /* Transition from !test.html */
     position: relative; /* For active indicator */
+    font-size: 1.1em; /* Slightly larger font from !test.html */
   }
 
   .tab-button:hover:not(.active) {
@@ -133,12 +141,12 @@
     color: var(--text-color);
     background-color: var(--background-medium);
     /* Spotify-like active indicator */
-    border-bottom: 3px solid var(--primary-color);
+    border-bottom: 4px solid var(--primary-color); /* Thicker border from !test.html */
   }
 
   main {
     flex-grow: 1;
-    padding: 25px; /* More padding */
+    padding: 30px; /* More padding from !test.html */
   }
 
   .tab-content {
@@ -154,8 +162,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px; /* More margin */
-    gap: 15px; /* More gap */
+    margin-bottom: 30px; /* More margin from !test.html */
+    gap: 20px; /* More gap from !test.html */
     flex-wrap: wrap;
   }
 
@@ -163,19 +171,25 @@
     background-color: var(--primary-color);
     color: white;
     border: none;
-    padding: 14px 20px; /* Increased padding for better touch target and look */
-    min-height: 48px;
-    border-radius: 25px; /* Pill-shaped buttons */
+    padding: 16px 25px; /* Increased padding for better touch target and look from !test.html */
+    min-height: 52px; /* Increased min-height from !test.html */
+    border-radius: 28px; /* Pill-shaped buttons from !test.html */
     cursor: pointer;
-    font-size: 0.95em;
+    font-size: 1.0em; /* Slightly larger font from !test.html */
     font-weight: 600;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); /* Subtle shadow */
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease; /* Transition from !test.html */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* Enhanced shadow from !test.html */
+  }
+  
+  .library-controls button:focus {
+      outline: 3px solid rgba(var(--primary-color-rgb), 0.7); /* Thicker, more visible focus from !test.html */
+      outline-offset: 3px; /* From !test.html */
   }
 
   .library-controls button:hover {
     background-color: #1ED760; /* Slightly lighter green on hover */
-    transform: translateY(-1px); /* Subtle lift effect */
+    transform: translateY(-2px); /* Subtle lift effect from !test.html */
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.55); /* More pronounced shadow on hover from !test.html */
   }
 
   .library-controls .file-input-wrapper {
@@ -187,18 +201,25 @@
     background-color: var(--background-light);
     color: var(--text-color);
     border: 1px solid var(--border-color);
-    padding: 14px 20px;
-    min-height: 48px;
-    border-radius: 25px; /* Pill-shaped */
+    padding: 16px 25px; /* From !test.html */
+    min-height: 52px; /* From !test.html */
+    border-radius: 28px; /* Pill-shaped from !test.html */
     cursor: pointer;
-    font-size: 0.95em;
+    font-size: 1.0em; /* From !test.html */
     font-weight: 500;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; /* From !test.html */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); /* From !test.html */
   }
 
   .library-controls .file-input-wrapper:hover {
     background-color: #383838;
     border-color: #555555;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45); /* More pronounced shadow on hover from !test.html */
+  }
+  
+  .library-controls .file-input-wrapper:focus-within {
+      outline: 3px solid rgba(var(--primary-color-rgb), 0.7); /* From !test.html */
+      outline-offset: 3px; /* From !test.html */
   }
 
   .library-controls .file-input-wrapper input[type="file"] {
@@ -213,49 +234,63 @@
 
   .library-filter-nav {
     display: flex;
-    gap: 10px; /* More gap */
+    gap: 15px; /* More gap from !test.html */
     flex-wrap: wrap;
-    margin-bottom: 25px;
+    margin-bottom: 30px; /* More margin from !test.html */
   }
 
   .library-filter-nav button {
     background-color: var(--background-medium);
     color: var(--text-muted);
     border: 1px solid var(--border-color);
-    padding: 10px 18px;
-    min-height: 40px;
-    border-radius: 20px; /* Rounded filter buttons */
+    padding: 12px 22px; /* Increased padding from !test.html */
+    min-height: 44px; /* Increased min-height from !test.html */
+    border-radius: 22px; /* Rounded filter buttons from !test.html */
     cursor: pointer;
-    font-size: 0.88em;
+    font-size: 0.95em; /* Slightly larger font from !test.html */
     font-weight: 500;
-    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.15s ease; /* Transition from !test.html */
+  }
+  
+  .library-filter-nav button:focus {
+      outline: 3px solid rgba(var(--primary-color-rgb), 0.7); /* From !test.html */
+      outline-offset: 3px; /* From !test.html */
   }
 
   .library-filter-nav button:hover {
     background-color: var(--background-light);
     border-color: var(--text-muted);
     color: var(--text-color);
+    transform: translateY(-1px); /* Subtle lift effect from !test.html */
+  }
+
+  .library-filter-nav button.active {
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.4); /* From !test.html */
   }
 
   .library-list, .playlist-list {
     list-style: none;
     padding: 0;
     margin: 0;
-    max-height: 400px; /* Default max height for scroll */
+    max-height: 450px; /* Default max height for scroll, increased from !test.html */
     overflow-y: auto;
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 10px; /* Slightly more rounded from !test.html */
     background-color: var(--background-dark);
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.3); /* Inner shadow for list depth from !test.html */
   }
 
   .library-list li, .playlist-list li {
-    padding: 15px 20px; /* More padding */
+    padding: 18px 25px; /* More padding from !test.html */
     border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s ease; /* From !test.html */
   }
 
   .library-list li:last-child, .playlist-list li:last-child {
@@ -268,59 +303,70 @@
 
   .library-list li.playing, .playlist-list li.playing { /* Apply playing style to both lists */
     background-color: rgba(var(--primary-color-rgb), 0.15); /* Subtle green highlight */
-    border-left: 4px solid var(--primary-color); /* Thicker border */
-    padding-left: 16px; /* Adjust padding due to border */
+    border-left: 5px solid var(--primary-color); /* Thicker border from !test.html */
+    padding-left: 20px; /* Adjust padding due to border from !test.html */
   }
 
   .track-info {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px; /* Small gap between title and artist */
+    gap: 6px; /* Small gap between title and artist, increased from !test.html */
   }
 
   .track-info strong {
-    font-size: 1.05em; /* Slightly larger title */
+    font-size: 1.18em; /* Slightly larger title from !test.html */
     font-weight: 600;
     color: var(--text-color);
+    line-height: 1.3; /* Improved readability from !test.html */
   }
 
   .track-info span {
-    font-size: 0.88em; /* Slightly smaller for artist/album */
+    font-size: 0.92em; /* Slightly smaller for artist/album from !test.html */
     color: var(--text-muted);
+    line-height: 1.4; /* Improved readability from !test.html */
   }
 
   .playlist-actions button {
     background: none;
     border: none;
     color: var(--text-muted); /* Muted color for icons */
-    font-size: 1.5em; /* Slightly larger icons for touch */
+    font-size: 1.75em; /* Slightly larger icons for touch from !test.html */
     cursor: pointer;
-    margin-left: 15px; /* More margin */
-    transition: color 0.2s ease, transform 0.1s ease;
-    padding: 8px; /* Add padding for touch area */
+    margin-left: 20px; /* More margin from !test.html */
+    transition: color 0.2s ease, transform 0.15s ease, background-color 0.2s ease; /* Transition from !test.html */
+    padding: 10px; /* Add padding for larger touch area from !test.html */
+    border-radius: 50%; /* Make them circular buttons from !test.html */
+  }
+  
+  .playlist-actions button:focus {
+      outline: 3px solid rgba(var(--primary-color-rgb), 0.7); /* From !test.html */
+      outline-offset: 3px; /* From !test.html */
   }
 
   .playlist-actions button:hover {
     color: var(--primary-color); /* Green on hover */
+    background-color: rgba(var(--primary-color-rgb), 0.1); /* Subtle background on hover from !test.html */
     transform: scale(1.1);
   }
 
   .no-songs-message {
     text-align: center;
-    padding: 30px; /* More padding */
+    padding: 40px; /* More padding from !test.html */
     color: var(--text-muted);
-    font-size: 1.1em;
+    font-size: 1.25em; /* Slightly larger font from !test.html */
+    line-height: 1.5; /* From !test.html */
   }
 
   /* Player Controls */
   .player-controls-container {
     background-color: var(--background-light);
-    padding: 25px; /* More padding */
+    padding: 30px; /* More padding from !test.html */
     border-top: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    gap: 20px; /* More gap */
+    gap: 25px; /* More gap from !test.html */
+    box-shadow: 0 -8px 25px rgba(0,0,0,0.4); /* Shadow for player controls from !test.html */
   }
 
   .current-track-info {
@@ -328,151 +374,180 @@
   }
 
   .current-track-info h3 {
-    margin: 0 0 8px 0; /* More margin */
+    margin: 0 0 10px 0; /* More margin from !test.html */
     color: var(--text-color);
-    font-size: 1.3em; /* Larger title */
+    font-size: 1.6em; /* Larger title from !test.html */
     font-weight: 600;
+    line-height: 1.3; /* From !test.html */
   }
 
   .current-track-info p {
     margin: 0;
     color: var(--text-muted);
-    font-size: 0.95em;
+    font-size: 1.05em; /* Slightly larger from !test.html */
+    line-height: 1.4; /* From !test.html */
   }
 
   .progress-bar-container {
     width: 100%;
-    height: 8px; /* Slightly thicker for easier tapping */
+    height: 10px; /* Slightly thicker for easier tapping from !test.html */
     background-color: #404040; /* Darker background for progress bar */
-    border-radius: 4px;
+    border-radius: 5px; /* From !test.html */
     cursor: pointer;
     position: relative;
-    margin-bottom: 10px;
+    margin-bottom: 12px; /* Increased margin from !test.html */
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); /* Subtle inner shadow from !test.html */
   }
 
   .progress-bar {
     height: 100%;
     width: 0%;
-    background-color: var(--primary-color); /* Spotify Green progress */
-    border-radius: 4px;
-    transition: width 0.1s linear;
+    background: linear-gradient(to right, var(--primary-color), #68d391); /* Gradient for progress bar from !test.html */
+    border-radius: 5px; /* From !test.html */
+    transition: width 0.1s linear, background 0.2s ease; /* Added background transition from !test.html */
+  }
+  
+  .progress-bar:hover {
+      background: linear-gradient(to right, #1ED760, #73f0a0); /* Slightly lighter on hover from !test.html */
   }
 
   .time-info {
     display: flex;
     justify-content: space-between;
-    font-size: 0.9em;
+    font-size: 0.95em; /* Slightly larger from !test.html */
     color: var(--text-muted);
     margin-top: -5px;
-    margin-bottom: 10px;
+    margin-bottom: 15px; /* Increased margin from !test.html */
   }
 
   .player-buttons {
     display: flex;
     justify-content: center;
-    gap: 30px; /* More gap between buttons */
-    margin-bottom: 15px;
+    gap: 35px; /* More gap between buttons from !test.html */
+    margin-bottom: 20px; /* Increased margin from !test.html */
   }
 
   .player-buttons button {
     background: none;
     border: none;
     color: var(--text-color); /* White icons */
-    font-size: 2.5em; /* Larger player control icons */
+    font-size: 2.8em; /* Larger player control icons from !test.html */
     cursor: pointer;
-    transition: color 0.2s ease, transform 0.1s ease;
-    padding: 10px; /* Add padding for touch area */
+    transition: color 0.2s ease, transform 0.15s ease; /* Transition from !test.html */
+    padding: 12px; /* Add padding for touch area from !test.html */
+    border-radius: 50%; /* Make them circular buttons from !test.html */
+  }
+  
+  .player-buttons button:focus {
+      outline: 3px solid rgba(var(--primary-color-rgb), 0.7); /* From !test.html */
+      outline-offset: 3px; /* From !test.html */
   }
 
   .player-buttons button:hover {
     color: var(--primary-color); /* Green on hover */
-    transform: scale(1.1);
+    transform: scale(1.15); /* More pronounced lift from !test.html */
   }
 
   .volume-controls {
     display: flex;
     align-items: center;
-    gap: 15px; /* More gap */
+    gap: 18px; /* More gap from !test.html */
     justify-content: center;
   }
 
   .volume-controls input[type="range"] {
     flex-grow: 1;
-    max-width: 250px; /* Slightly wider slider */
+    max-width: 280px; /* Slightly wider slider from !test.html */
     -webkit-appearance: none;
     background: #404040; /* Darker background for slider track */
     border-radius: 5px;
-    height: 10px;
+    height: 12px; /* Thicker track from !test.html */
     outline: none;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.4); /* Inner shadow for track from !test.html */
   }
 
   .volume-controls input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 22px; /* Larger thumb for touch */
-    height: 22px; /* Larger thumb for touch */
+    width: 24px; /* Larger thumb for touch from !test.html */
+    height: 24px; /* Larger thumb for touch from !test.html */
     background: var(--primary-color); /* Spotify Green thumb */
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); /* Enhanced shadow from !test.html */
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease; /* Transition from !test.html */
   }
 
   .volume-controls input[type="range"]::-webkit-slider-thumb:hover {
       background-color: #1ED760;
       transform: scale(1.1);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6); /* From !test.html */
+  }
+  
+  .volume-controls input[type="range"]:focus::-webkit-slider-thumb {
+      outline: 3px solid rgba(var(--primary-color-rgb), 0.7); /* From !test.html */
+      outline-offset: 3px; /* Offset from the thumb from !test.html */
   }
 
   .volume-controls input[type="range"]::-moz-range-thumb {
-    width: 22px; /* Larger thumb for touch */
-    height: 22px; /* Larger thumb for touch */
+    width: 24px; /* Larger thumb for touch from !test.html */
+    height: 24px; /* Larger thumb for touch from !test.html */
     background: var(--primary-color); /* Spotify Green thumb */
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); /* Enhanced shadow from !test.html */
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease; /* Transition from !test.html */
   }
 
   .volume-controls input[type="range"]::-moz-range-thumb:hover {
       background-color: #1ED760;
       transform: scale(1.1);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6); /* From !test.html */
+  }
+  
+  .volume-controls input[type="range"]:focus::-moz-range-thumb {
+      outline: 3px solid rgba(var(--primary-color-rgb), 0.7); /* From !test.html */
+      outline-offset: 3px; /* From !test.html */
   }
 
   /* Stream URL input */
   .stream-input-group, .youtube-playlist-input-group {
     display: flex;
-    gap: 15px; /* More gap */
-    margin-top: 20px; /* More margin */
+    gap: 20px; /* More gap from !test.html */
+    margin-top: 25px; /* More margin from !test.html */
     flex-wrap: wrap;
   }
 
   .stream-input-group input[type="text"],
   .youtube-playlist-input-group input[type="text"] {
     flex-grow: 1;
-    padding: 14px 18px; /* Increased padding */
-    min-height: 48px;
-    border: 2px solid var(--border-color); /* Thicker border for validation state */
-    border-radius: 8px; /* Slightly rounded corners */
+    padding: 16px 20px; /* Increased padding from !test.html */
+    min-height: 52px; /* Consistent height from !test.html */
+    border: 2px solid var(--border-color); /* Thicker border for validation state from !test.html */
+    border-radius: 10px; /* Slightly rounded corners from !test.html */
     background-color: #333333; /* Darker input background */
     color: var(--text-color);
-    font-size: 0.95em;
-    transition: border-color 0.2s ease;
+    font-size: 1.0em; /* Slightly larger font from !test.html */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease; /* From !test.html */
   }
   
   /* Input validation styles */
   .stream-input-group input[type="text"].valid,
   .youtube-playlist-input-group input[type="text"].valid {
       border-color: var(--success-color);
+      box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.3); /* From !test.html */
   }
   .stream-input-group input[type="text"].invalid,
   .youtube-playlist-input-group input[type="text"].invalid {
       border-color: var(--error-color);
+      box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.3); /* From !test.html */
   }
 
   .stream-input-group input[type="text"]:focus,
   .youtube-playlist-input-group input[type="text"]:focus {
       outline: none;
       border-color: var(--primary-color); /* Green border on focus */
+      box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.5); /* Stronger focus shadow from !test.html */
   }
 
   .stream-input-group button,
@@ -480,37 +555,45 @@
     background-color: var(--primary-color);
     color: white;
     border: none;
-    padding: 14px 20px;
-    min-height: 48px;
-    border-radius: 25px; /* Pill-shaped buttons */
+    padding: 16px 25px; /* Increased padding from !test.html */
+    min-height: 52px; /* Consistent height from !test.html */
+    border-radius: 28px; /* Pill-shaped buttons from !test.html */
     cursor: pointer;
-    font-size: 0.95em;
+    font-size: 1.0em;
     font-weight: 600;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease; /* From !test.html */
     white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* From !test.html */
   }
 
   .stream-input-group button:hover,
   .youtube-playlist-input-group button:hover {
     background-color: #1ED760;
-    transform: translateY(-1px);
+    transform: translateY(-2px); /* From !test.html */
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.55); /* From !test.html */
+  }
+  
+  .stream-input-group button:focus,
+  .youtube-playlist-input-group button:focus {
+      outline: 3px solid rgba(var(--primary-color-rgb), 0.7); /* From !test.html */
+      outline-offset: 3px; /* From !test.html */
   }
 
   /* Visualizer */
   #visualizer {
     background-color: var(--background-dark);
-    border-radius: 8px;
-    margin-bottom: 20px;
+    border-radius: 10px; /* From !test.html */
+    margin-bottom: 25px; /* Increased margin from !test.html */
     width: 100%;
-    height: 120px;
+    height: 150px; /* Taller visualizer from !test.html */
     border: 1px solid var(--border-color);
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.4); /* Inner shadow for depth from !test.html */
   }
 
   /* Scrollbar Styling (for Webkit browsers like Chrome/Safari) */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px; /* Wider scrollbar from !test.html */
+    height: 10px;
   }
 
   ::-webkit-scrollbar-track {
@@ -519,12 +602,12 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #555;
+    background: #666; /* Slightly lighter thumb from !test.html */
     border-radius: 10px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #777;
+    background: #888; /* Even lighter on hover from !test.html */
   }
 
   /* Playlist controls styling */
@@ -559,6 +642,7 @@
   @media (max-width: 600px) {
     body {
       padding: 10px;
+      padding-bottom: 30px; /* Adjusted padding for mobile from !test.html */
     }
 
     .container {
@@ -569,21 +653,21 @@
     header {
       flex-direction: column;
       text-align: center;
-      padding: 15px 10px;
+      padding: 20px 15px; /* Adjusted padding from !test.html */
     }
 
     header h1 {
-        font-size: 1.6em;
+        font-size: 1.8em; /* Adjusted font size for mobile from !test.html */
     }
 
     main {
-        padding: 15px 10px;
+        padding: 20px 15px; /* Adjusted padding from !test.html */
     }
 
     .library-controls, .stream-input-group, .youtube-playlist-input-group, .playlist-controls {
       flex-direction: column;
-      gap: 10px;
-      margin-bottom: 15px;
+      gap: 15px; /* Adjusted gap from !test.html */
+      margin-bottom: 20px; /* Adjusted margin from !test.html */
     }
 
     .library-controls .file-input-wrapper,
@@ -593,104 +677,116 @@
     .youtube-playlist-input-group button,
     .playlist-controls button {
       width: 100%;
-      font-size: 0.9em;
-      padding: 12px 15px;
-      min-height: 45px;
+      font-size: 0.95em; /* Adjusted font size from !test.html */
+      padding: 14px 18px; /* Adjusted padding from !test.html */
+      min-height: 48px; /* Adjusted min-height from !test.html */
     }
 
     .library-filter-nav {
       justify-content: center;
-      gap: 8px;
-      margin-bottom: 15px;
+      gap: 10px; /* Adjusted gap from !test.html */
+      margin-bottom: 20px; /* Adjusted margin from !test.html */
     }
 
     .library-filter-nav button {
-        padding: 8px 12px;
-        min-height: 38px;
-        font-size: 0.8em;
+        padding: 10px 15px; /* Adjusted padding from !test.html */
+        min-height: 40px; /* Adjusted min-height from !test.html */
+        font-size: 0.9em; /* Adjusted font size from !test.html */
+    }
+
+    .library-filter-nav button.active {
+      box-shadow: 0 1px 4px rgba(var(--primary-color-rgb), 0.3); /* Smaller shadow on mobile from !test.html */
     }
 
     .library-list, .playlist-list {
-        max-height: 45vh; /* Adjust viewport height for lists on smaller screens */
-        border-radius: 6px;
+        max-height: 40vh; /* Adjusted viewport height for lists on smaller screens from !test.html */
+        border-radius: 8px; /* Adjusted border-radius from !test.html */
     }
 
     .library-list li, .playlist-list li {
-        padding: 12px 15px;
+        padding: 15px 20px; /* Adjusted padding from !test.html */
     }
 
     .track-info strong {
-        font-size: 0.95em;
+        font-size: 1.05em; /* Adjusted font size from !test.html */
     }
 
     .track-info span {
-        font-size: 0.8em;
+        font-size: 0.85em; /* Adjusted font size from !test.html */
     }
 
     .playlist-actions button {
-        font-size: 1.3em;
-        margin-left: 8px;
+        font-size: 1.5em; /* Adjusted font size from !test.html */
+        margin-left: 10px; /* Adjusted margin from !test.html */
+        padding: 8px; /* Adjusted padding from !test.html */
     }
 
     .no-songs-message {
-        padding: 20px;
-        font-size: 1em;
+        padding: 25px; /* Adjusted padding from !test.html */
+        font-size: 1.1em; /* Adjusted font size from !test.html */
     }
 
     .player-controls-container {
-        padding: 15px 10px;
-        gap: 15px;
+        padding: 20px 15px; /* Adjusted padding from !test.html */
+        gap: 20px; /* Adjusted gap from !test.html */
     }
 
     .current-track-info h3 {
-        font-size: 1.1em;
-        margin-bottom: 5px;
+        font-size: 1.2em; /* Adjusted font size from !test.html */
+        margin-bottom: 8px; /* Adjusted margin from !test.html */
     }
 
     .current-track-info p {
-        font-size: 0.85em;
+        font-size: 0.9em; /* Adjusted font size from !test.html */
     }
 
     .progress-bar-container {
-        height: 6px;
-        border-radius: 3px;
+        height: 8px; /* Adjusted height from !test.html */
+        border-radius: 4px; /* Adjusted border-radius from !test.html */
     }
 
     .progress-bar {
-        border-radius: 3px;
+        border-radius: 4px; /* Adjusted border-radius from !test.html */
     }
 
     .time-info {
-        font-size: 0.8em;
+        font-size: 0.85em; /* Adjusted font size from !test.html */
     }
 
     .player-buttons {
-        gap: 20px;
+        gap: 25px; /* Adjusted gap from !test.html */
     }
 
     .player-buttons button {
-        font-size: 2em;
-        padding: 5px;
+        font-size: 2.2em; /* Adjusted font size from !test.html */
+        padding: 8px; /* Adjusted padding from !test.html */
     }
 
     .volume-controls {
-        gap: 10px;
+        flex-direction: column;
+        gap: 12px; /* Adjusted gap from !test.html */
+    }
+
+    .volume-controls input[type="range"] {
+      width: 100%;
+      max-width: 100%;
+      height: 8px;
     }
 
     .volume-controls input[type="range"]::-webkit-slider-thumb,
     .volume-controls input[type="range"]::-moz-range-thumb {
-        width: 18px;
-        height: 18px;
+        width: 20px; /* Adjusted size from !test.html */
+        height: 20px; /* Adjusted size from !test.html */
     }
 
     #visualizer {
-        height: 100px; /* Slightly smaller visualizer on mobile */
+        height: 120px; /* Slightly smaller visualizer on mobile from !test.html */
     }
   }
 </style>
 </head>
 <body>
-  <div id="ui-message" class="ui-message"></div>
+  <div class="ui-message" id="uiMessage"></div>
 
   <div class="container">
     <header>
@@ -1112,7 +1208,7 @@
        * @param {string} playlistId The ID of the YouTube playlist.
        */
       async function addYouTubePlaylist(playlistId) {
-          if (!YOUTUBE_API_KEY ||YOUTUBE_API_KEY === 'PASTE YOUR YOUTUBE API KEY HERE FOR DEVELOPMENT') {
+          if (!YOUTUBE_API_KEY || YOUTUBE_API_KEY === 'AIzaSyDBQ9OjY2XW8DY7-WpPb6Q2LURnWCzkoAY') {
               showUIMessage("YouTube API Key is not configured. Please replace the placeholder.", 'error', 7000);
               return;
           }
@@ -1532,6 +1628,20 @@
         libraryList.innerHTML = ''; // Clear previous list
         let filteredLibrary = [];
 
+        // Update active state of filter buttons
+        document.querySelectorAll('.library-filter-nav button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        const activeButton = document.getElementById(`view-${filterType}-songs-btn`) || document.getElementById(`${filterType}-filter-btn`) || document.getElementById(`view-${filterType}s-btn`);
+        if (activeButton) {
+            activeButton.classList.add('active');
+        } else if (filterType === 'all') { // Default to 'All Songs' if no specific filter button matches
+            viewAllSongsBtn.classList.add('active');
+        } else if (filterType === 'clear') { // If clear filter button was clicked
+            clearFilterBtn.classList.add('active');
+        }
+
+
         if (filterType === 'all') {
           filteredLibrary = library;
         } else if (filterType === 'albums') {
@@ -1539,8 +1649,13 @@
           if (!filterValue) { // Show album titles for selection
               albums.forEach(album => {
                   const li = document.createElement('li');
-                  li.textContent = `Album: ${album}`;
-                  li.classList.add('album-filter-item');
+                  li.innerHTML = `
+                    <div class="track-info">
+                      <strong>Album: ${album}</strong>
+                      <span>Click to view tracks</span>
+                    </div>
+                  `;
+                  li.classList.add('filter-group-item');
                   li.dataset.filterValue = album;
                   li.addEventListener('click', () => renderLibraryList('albums', album));
                   libraryList.appendChild(li);
@@ -1555,8 +1670,13 @@
             if (!filterValue) {
                 artists.forEach(artist => {
                     const li = document.createElement('li');
-                    li.textContent = `Artist: ${artist}`;
-                    li.classList.add('artist-filter-item');
+                    li.innerHTML = `
+                      <div class="track-info">
+                        <strong>Artist: ${artist}</strong>
+                        <span>Click to view tracks</span>
+                      </div>
+                    `;
+                    li.classList.add('filter-group-item');
                     li.dataset.filterValue = artist;
                     li.addEventListener('click', () => renderLibraryList('artists', artist));
                     libraryList.appendChild(li);
@@ -1571,8 +1691,13 @@
             if (!filterValue) {
                 genres.forEach(genre => {
                     const li = document.createElement('li');
-                    li.textContent = `Genre: ${genre}`;
-                    li.classList.add('genre-filter-item');
+                    li.innerHTML = `
+                      <div class="track-info">
+                        <strong>Genre: ${genre}</strong>
+                        <span>Click to view tracks</span>
+                      </div>
+                    `;
+                    li.classList.add('filter-group-item');
                     li.dataset.filterValue = genre;
                     li.addEventListener('click', () => renderLibraryList('genres', genre));
                     libraryList.appendChild(li);
@@ -1682,6 +1807,9 @@
        */
       function clearFilter() {
         renderLibraryList('all');
+        // Ensure only 'All Songs' button is active after clearing filter
+        document.querySelectorAll('.library-filter-nav button').forEach(btn => btn.classList.remove('active'));
+        viewAllSongsBtn.classList.add('active');
       }
       
       /**
@@ -1715,7 +1843,7 @@
           const url = streamUrlInput.value.trim();
           if (url) {
             const streamTrack = {
-              id: Date.now() + Math.random(),
+              id: Date.now() + Math.random(), // Simple unique ID
               name: url.split('/').pop() || 'Streaming Audio',
               url: url, type: 'stream', title: 'Streaming Audio', artist: 'Remote Stream', album: 'Live Stream'
             };
